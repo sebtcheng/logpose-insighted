@@ -56,6 +56,7 @@ type Raw = {
   isCompleted: boolean;
   completedAt: Date | null;
   pmApproval?: "PENDING" | "APPROVED";
+  sprintKey?: string | null;
 };
 
 const finishedOr = (done: boolean, at: Date | null, fallback: Date): Date | null =>
@@ -168,6 +169,7 @@ export async function loadWorkItems(
         isCompleted: done,
         completedAt: finishedOr(done, null, s.updatedAt),
         pmApproval: s.pmApproval,
+        sprintKey: s.sprintKey,
       });
     }
 
@@ -185,6 +187,7 @@ export async function loadWorkItems(
         isCompleted: f.isCompleted,
         completedAt: f.completedAt,
         pmApproval: f.pmApproval,
+        sprintKey: f.sprintKey,
       });
     }
 
@@ -222,6 +225,7 @@ export async function loadWorkItems(
         isCompleted: s.isCompleted,
         completedAt: s.completedAt,
         pmApproval: s.pmApproval,
+        sprintKey: s.sprintKey,
       });
     }
 
@@ -260,6 +264,7 @@ export async function loadWorkItems(
         isCompleted: m.isCompleted,
         completedAt: m.completedAt,
         pmApproval: m.pmApproval,
+        sprintKey: m.sprintKey,
       });
     }
   }
@@ -296,6 +301,7 @@ export async function loadWorkItems(
         completedAt: r.completedAt ? r.completedAt.toISOString() : null,
         scheduleStatus: classifySchedule(r, today, timeZone),
         pmApproval: r.pmApproval ?? "PENDING",
+        sprintKey: r.sprintKey ?? null,
       };
     })
     .filter((i) => !query.assigneeId || i.assigneeId === query.assigneeId)

@@ -172,7 +172,7 @@ function SolutionTableRow({ s, ctx }: { s: SolutionDto; ctx: OstCtx }) {
       </Table.Td>
       <Table.Td>{DASH}</Table.Td>
       <Table.Td>
-        <SolutionCheck solution={s} editable={pmOnly} />
+        <SolutionCheck solution={s} editable={canEdit} />
       </Table.Td>
       <Table.Td>{s.ownerName ?? DASH}</Table.Td>
       <Table.Td>

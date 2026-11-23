@@ -20,6 +20,11 @@ vi.mock("../auth", () => ({
 import { api } from "../api/client";
 import { StoryMapPage } from "./StoryMapPage";
 
+vi.mock("../api/lookups", async (orig) => {
+  const { mockUseRefSprints } = await import("../lib/testRefSprints");
+  return { ...(await orig<Record<string, unknown>>()), useRefSprints: mockUseRefSprints };
+});
+
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
 const USERS = [{ id: "u-tm", fullName: "Tomas Member", role: "team_member", isActive: true }];
@@ -530,7 +535,7 @@ describe("User Story Mapping as a team member", () => {
     auth.role = "pm";
   });
 
-  it("can add users, add and insert steps, and add features, but not delete", async () => {
+  it("can add users, add and insert steps, add features, and delete empty steps (but not features)", async () => {
     auth.role = "team_member";
     await mount();
     expect(buttonByText("Add user")).toBeTruthy();
@@ -541,8 +546,21 @@ describe("User Story Mapping as a team member", () => {
     expect(byLabel("Feature 1")!.disabled).toBe(false);
     expect(byLabel("Feature 1 sprint")!.disabled).toBe(false);
     expect(buttonByText("Save step")).toBeTruthy();
-    expect(buttonByText("Delete step")).toBeUndefined();
+    // s1 has features, so Delete step is visible but disabled with restriction hint
+    const deleteBtn = buttonByText("Delete step");
+    expect(deleteBtn).toBeTruthy();
+    expect(deleteBtn!.disabled).toBe(true);
+    expect(deleteBtn!.title).toContain("Remove all actions");
     expect(byAria("Remove feature 1")).toBeNull();
+  });
+
+  it("allows team members to delete an empty step", async () => {
+    auth.role = "team_member";
+    await mount();
+    await click(document.querySelector("[data-step='s2']"));
+    const deleteBtn = buttonByText("Delete step");
+    expect(deleteBtn).toBeTruthy();
+    expect(deleteBtn!.disabled).toBe(false);
   });
 
   it("leaves ticking to the approval gate (seeded feature is approved)", async () => {

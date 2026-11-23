@@ -288,7 +288,6 @@ modules.patch(
 );
 modules.delete(
   "/story-map/steps/:id",
-  requireAction("story.manage"),
   asyncHandler(async (req, res) => {
     await usm.deleteStep(idParam(req));
     res.status(204).end();
@@ -477,8 +476,6 @@ modules.patch(
   requireAction("ost.edit"),
   asyncHandler(async (req, res) => {
     const patch = parse(updateSolutionSchema, req.body);
-    // Marking a solution validated or invalidated stays with the PM, on top of the PM approval gate.
-    if (patch.validationStatus !== undefined && !can(actorOf(res), "ost.manage")) throw forbidden();
     res.json(await ost.updateSolution(idParam(req), patch));
   }),
 );

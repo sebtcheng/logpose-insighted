@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { Select } from "@mantine/core";
-import { listSprintOptions, resolveStoredSprint } from "@myapp/shared";
+import { formatRefSprintLabel, resolveStoredSprint, sprintFromKey } from "@myapp/shared";
+import { useRefSprints } from "../api/lookups";
 
 /** Draft value for a stored row: its sprint key, or the sprint containing a legacy date; "" when unassigned. */
 export const sprintDraftValue = (
@@ -33,10 +34,23 @@ export function SprintSelect({
   label?: string;
   "aria-label": string;
 }) {
-  const data = useMemo(
-    () => listSprintOptions({ keep: [value] }).map((o) => ({ value: o.key, label: o.label })),
-    [value],
-  );
+  const { data: sprints } = useRefSprints();
+  const data = useMemo(() => {
+    const options = (sprints ?? []).map((s) => ({
+      value: s.sprintKey,
+      label: formatRefSprintLabel(s),
+    }));
+    // An already-assigned sprint outside the fetched window stays selectable so editing never drops it.
+    const kept = value && !options.some((o) => o.value === value) ? sprintFromKey(value) : null;
+    if (kept) {
+      options.push({
+        value: kept.key,
+        label: formatRefSprintLabel({ sprintNumber: kept.number, deadline: kept.endDate }),
+      });
+      options.sort((a, b) => a.value.localeCompare(b.value));
+    }
+    return options;
+  }, [sprints, value]);
   return (
     <Select
       aria-label={ariaLabel}

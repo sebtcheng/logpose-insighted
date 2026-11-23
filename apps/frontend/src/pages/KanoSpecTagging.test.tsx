@@ -14,6 +14,11 @@ import { api } from "../api/client";
 import { KanoSpecChecklist } from "../components/KanoSpecs";
 import { EditModal } from "./KanoPage";
 
+vi.mock("../api/lookups", async (orig) => {
+  const { mockUseRefSprints } = await import("../lib/testRefSprints");
+  return { ...(await orig<Record<string, unknown>>()), useRefSprints: mockUseRefSprints };
+});
+
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
 const USERS = [

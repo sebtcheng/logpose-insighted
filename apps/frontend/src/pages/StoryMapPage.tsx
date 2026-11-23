@@ -505,6 +505,7 @@ export function StoryMapPage() {
         onClose={() => setOpenId(null)}
         canEdit={canAdd && !readOnly}
         canDelete={isPm && !readOnly}
+        canDeleteStep={!readOnly}
         canTick={!readOnly}
       />
       {persona ? (

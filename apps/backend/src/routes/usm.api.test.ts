@@ -130,19 +130,28 @@ describe("USM steps", () => {
     expect(bad.status).toBe(422);
     expect(await titles(p.id)).toEqual(["C", "A", "B"]);
   });
-  it("deleting a step cascades its features and closes the gap", async () => {
+  it("blocks deleting a step with features (409) and lets any authenticated role delete an empty step", async () => {
     const p = await persona("Delete");
     const a = await step(p.id, "A");
     const b = await step(p.id, "B");
     const feat = json<UsmFeatureDto>(
       await pm.post(`${BASE}/features`).send({ projectId: f.project.id, stepId: a.id, title: "F" }),
     );
-    expect((await pm.delete(`${BASE}/steps/${a.id}`)).status).toBe(204);
+    // Non-empty step cannot be deleted by PM or member (409 Conflict, no cascade)
+    expect((await pm.delete(`${BASE}/steps/${a.id}`)).status).toBe(409);
+    expect((await member.delete(`${BASE}/steps/${a.id}`)).status).toBe(409);
+    expect((await pm.patch(`${BASE}/features/${feat.id}`).send({ title: "F" })).status).toBe(200);
+
+    // Unauthenticated request returns 401
+    expect((await request(app).delete(`${BASE}/steps/${a.id}`)).status).toBe(401);
+
+    // Once features are removed, any authenticated role (e.g. member) can delete the empty step
+    expect((await pm.delete(`${BASE}/features/${feat.id}`)).status).toBe(204);
+    expect((await member.delete(`${BASE}/steps/${a.id}`)).status).toBe(204);
     const left = json<{ items: UsmStepDto[] }>(
       await pm.get(`${BASE}/steps`).query({ projectId: f.project.id, personaId: p.id }),
     ).items;
     expect(left.map((s) => [s.id, s.sortOrder])).toEqual([[b.id, 0]]);
-    expect((await pm.patch(`${BASE}/features/${feat.id}`).send({ title: "x" })).status).toBe(404);
   });
 });
 

@@ -5,6 +5,11 @@ import { createRoot } from "react-dom/client";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { SprintSelect, sprintDraftValue } from "./SprintSelect";
 
+vi.mock("../api/lookups", async (orig) => {
+  const { mockUseRefSprints } = await import("../lib/testRefSprints");
+  return { ...(await orig<Record<string, unknown>>()), useRefSprints: mockUseRefSprints };
+});
+
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
 const cleanups: Array<() => void> = [];

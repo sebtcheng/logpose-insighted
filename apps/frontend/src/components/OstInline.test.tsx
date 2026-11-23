@@ -358,7 +358,7 @@ describe.each(["card", "table"] as const)("OST as a team member in the %s view",
     asPm = true;
   });
 
-  it("can add and edit but not delete, convert or tick", async () => {
+  it("can add, edit and tick but not delete or convert", async () => {
     asPm = false;
     const { host } = await mount(view);
     const labels = [...host.querySelectorAll("button")].map((b) => b.textContent?.trim());
@@ -366,6 +366,6 @@ describe.each(["card", "table"] as const)("OST as a team member in the %s view",
     expect(labels).toContain("Edit");
     expect(labels).not.toContain("Delete");
     expect(labels).not.toContain("Convert to story");
-    expect(boxes(host).every((b) => b.disabled)).toBe(true);
+    expect(boxes(host).every((b) => !b.disabled)).toBe(true);
   });
 });

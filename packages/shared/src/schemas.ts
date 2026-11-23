@@ -291,14 +291,20 @@ export type HomeRow = ActivityDto & { isOverdue: boolean; atRisk: boolean };
 export type HomeRelease = { id: string; name: string; targetDate: string };
 export type HomeResponse = {
   timezone: string;
+  /** The ref.sprints row containing today (Asia/Manila). `id` is the sprint key; `goal` is always null. */
   activeSprint: {
     id: string;
+    sprintKey: string;
+    sprintNumber: number;
     name: string;
     goal: string | null;
+    startDate: string;
     endDate: string;
     daysLeft: number;
   } | null;
   wip: { inProgress: number };
+  /** Open tasks left over from all earlier sprints (tagged with an earlier sprint, or untagged and due before this one). Null with no active sprint. */
+  carryOver: { count: number } | null;
   thisWeek: HomeRow[];
   nextWeek: HomeRow[];
   thisMonth: HomeRow[];
@@ -314,6 +320,8 @@ export type HomeResponse = {
   };
   /** Status counts over all five modules for the current filters. */
   summary: WorkSummary;
+  /** Current active sprint progress and status breakdown (zeros when no active sprint). */
+  sprintSummary: WorkSummary;
   /** True when the row cap was hit, so some items are missing. A PM should narrow by assignee or subproject. */
   truncated: boolean;
 };

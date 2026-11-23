@@ -223,9 +223,9 @@ describe("PM Approval column in task tables", () => {
         checkable: true,
       }),
     );
-    expect([...el.querySelectorAll("thead th")].some((th) => th.textContent?.includes("PM Approval"))).toBe(
-      true,
-    );
+    expect(
+      [...el.querySelectorAll("thead th")].some((th) => th.textContent?.includes("PM Approval")),
+    ).toBe(true);
     const badges = [...el.querySelectorAll("div[data-approval]")].map((b) => b.textContent);
     expect(badges).toEqual(["Approved", "Pending"]);
     expect(byLabel("Complete usm-1 title")!.disabled).toBe(true);

@@ -185,14 +185,7 @@ describe("Projects table: Owner and Team members, and Edit for every role", () =
     mount();
     await flush();
     const heads = [...document.querySelectorAll("thead th")].map((t) => t.textContent?.trim());
-    expect(heads).toEqual([
-      "Project↕⧗",
-      "Code↕⧗",
-      "Owner↕⧗",
-      "Team members↕⧗",
-      "Created↕⧗",
-      "",
-    ]);
+    expect(heads).toEqual(["Project↕⧗", "Code↕⧗", "Owner↕⧗", "Team members↕⧗", "Created↕⧗", ""]);
     const row = byText("td a", "eSF7")!.closest("tr")!;
     expect(row.querySelector("[data-col='owner']")?.textContent).toBe("Alice Analyst");
     expect(
