@@ -420,9 +420,7 @@ describe("Workload page as a team member", () => {
     await mount();
     const names = [
       ...document.querySelectorAll("tbody button[aria-expanded]:not([aria-label^='Filter '])"),
-    ].map((b) =>
-      b.textContent?.replace(/[▸▾]\s*/, "").trim(),
-    );
+    ].map((b) => b.textContent?.replace(/[▸▾]\s*/, "").trim());
     expect(names).toEqual(["Clea", "Klein", "Unassigned"]);
     expect(cells("Klein")[4]).toBe("4");
     expect(cells("Clea")).toHaveLength(9);

@@ -64,7 +64,7 @@ function SolutionRow({ s, ctx }: { s: SolutionDto; ctx: OstCtx }) {
     <div className="ost-solution" style={{ paddingLeft: "var(--mantine-spacing-md)" }}>
       <Group justify="space-between" wrap="wrap" py={4} align="flex-start">
         <div style={{ minWidth: 0, flex: 1 }}>
-          <SolutionCheck solution={s} editable={pmOnly} />
+          <SolutionCheck solution={s} editable={canEdit} />
           {s.ownerName || s.targetDate ? (
             <Text size="xs" c="dimmed" ml={26}>
               {[

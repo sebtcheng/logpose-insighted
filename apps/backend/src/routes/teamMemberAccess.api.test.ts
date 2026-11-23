@@ -163,7 +163,7 @@ describe("Team member: OST add and edit", () => {
     expect(sols.map((s) => s.pmApproval)).toEqual(["PENDING", "PENDING"]);
   });
 
-  it("cannot validate, complete a PENDING solution, delete or convert", async () => {
+  it("cannot complete a PENDING solution, delete or convert", async () => {
     expect(
       (await member.patch(`/api/ost/solutions/${solId}`).send({ validationStatus: "validated" }))
         .status,

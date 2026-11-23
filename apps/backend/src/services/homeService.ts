@@ -14,7 +14,7 @@ import {
 } from "drizzle-orm";
 import { compareByStatusOngoingFirst, type HomeResponse, type HomeRow } from "@myapp/shared";
 import { db } from "../db/client";
-import { activities, projects, releases, sprints, subprojects, users } from "../db/schema";
+import { activities, projects, refSprints, releases, subprojects, users } from "../db/schema";
 import { waitingOnDependency } from "./governanceService";
 import { scopeCondition, type ProjectScope } from "./visibilityService";
 import { env } from "../env";
@@ -102,19 +102,73 @@ export async function getHome(
   const today = localDate(now, timeZone);
   const r = homeRanges(today);
 
-  const rows = await homeCandidatesQuery(actor, query, r, scope);
+  const assigneeFilter = actor.role === "team_member" ? actor.id : query.assigneeId;
+
+  const [rows, loaded, upcomingReleases, [sprint], [wipRow]] = await Promise.all([
+    homeCandidatesQuery(actor, query, r, scope),
+    loadWorkItems(
+      {
+        assigneeId: assigneeFilter,
+        subprojectId: query.subprojectId,
+      },
+      scope,
+      now,
+      { onlyApproved: true },
+    ),
+    db
+      .select({ id: releases.id, name: releases.name, targetDate: releases.targetDate })
+      .from(releases)
+      .innerJoin(projects, eq(projects.id, releases.projectId))
+      .where(
+        and(
+          isNull(projects.archivedAt),
+          scopeCondition(releases.projectId, scope),
+          eq(releases.status, "planned"),
+          gte(releases.targetDate, today),
+          lte(releases.targetDate, r.monthEnd),
+        ),
+      )
+      .orderBy(asc(releases.targetDate), asc(releases.name))
+      .then((list) =>
+        list.flatMap((x) => (x.targetDate ? [{ ...x, targetDate: x.targetDate }] : [])),
+      ),
+    // The sprint containing today (Asia/Manila), from the canonical ref.sprints table.
+    db
+      .select({
+        sprintKey: refSprints.sprintKey,
+        sprintNumber: refSprints.sprintNumber,
+        label: refSprints.label,
+        startDate: refSprints.startDate,
+        deadline: refSprints.deadline,
+      })
+      .from(refSprints)
+      .where(and(lte(refSprints.startDate, today), gte(refSprints.deadline, today)))
+      .limit(1),
+    db
+      .select({ n: count() })
+      .from(activities)
+      .where(
+        and(
+          eq(activities.assigneeId, actor.id),
+          inArray(activities.status, ["in_progress"]),
+          eq(activities.pmApproval, "APPROVED"),
+        ),
+      ),
+  ]);
 
   const result: HomeResponse = {
     timezone: timeZone,
     activeSprint: null,
-    wip: { inProgress: 0 },
+    wip: { inProgress: wipRow?.n ?? 0 },
+    carryOver: null,
     thisWeek: [],
     nextWeek: [],
     thisMonth: [],
     later: [],
-    upcomingReleases: [],
+    upcomingReleases,
     moduleItems: { thisWeek: [], nextWeek: [], thisMonth: [], later: [] },
-    summary: summarize([]),
+    summary: summarize(loaded.items),
+    sprintSummary: summarize([]),
     truncated: rows.length >= HOME_ROW_LIMIT,
   };
 
@@ -122,6 +176,7 @@ export async function getHome(
     db,
     rows.map((row) => row.a.id),
   );
+
   for (const row of rows) {
     const completedDate = row.a.completedAt ? localDate(row.a.completedAt, timeZone) : null;
     const bucket = bucketFor({ dueDate: row.a.dueDate, status: row.a.status, completedDate }, r);
@@ -137,17 +192,6 @@ export async function getHome(
     result[bucket].push(item);
   }
 
-  // Unified work: summary counts over all five modules, plus the non-project items bucketed by due date.
-  const loaded = await loadWorkItems(
-    {
-      assigneeId: actor.role === "team_member" ? actor.id : query.assigneeId,
-      subprojectId: query.subprojectId,
-    },
-    scope,
-    now,
-    { onlyApproved: true },
-  );
-  result.summary = summarize(loaded.items);
   for (const item of loaded.items) {
     if (item.sourceModule === "project") continue;
     const bucket = bucketFor(
@@ -166,53 +210,36 @@ export async function getHome(
     result.moduleItems[key].sort(compareByStatusOngoingFirst);
   }
 
-  // This Month also lists releases still planned with a target date from today to month end.
-  result.upcomingReleases = await db
-    .select({ id: releases.id, name: releases.name, targetDate: releases.targetDate })
-    .from(releases)
-    .innerJoin(projects, eq(projects.id, releases.projectId))
-    .where(
-      and(
-        isNull(projects.archivedAt),
-        scopeCondition(releases.projectId, scope),
-        eq(releases.status, "planned"),
-        gte(releases.targetDate, today),
-        lte(releases.targetDate, r.monthEnd),
-      ),
-    )
-    .orderBy(asc(releases.targetDate), asc(releases.name))
-    .then((list) =>
-      list.flatMap((x) => (x.targetDate ? [{ ...x, targetDate: x.targetDate }] : [])),
-    );
-
-  // Header: active project-wide sprint of any open project, and the user's in-progress count.
-  const [sprint] = await db
-    .select({ id: sprints.id, name: sprints.name, goal: sprints.goal, endDate: sprints.endDate })
-    .from(sprints)
-    .innerJoin(projects, eq(projects.id, sprints.projectId))
-    .where(
-      and(
-        eq(sprints.status, "active"),
-        isNull(sprints.subprojectId),
-        isNull(projects.archivedAt),
-        scopeCondition(sprints.projectId, scope),
-      ),
-    )
-    .orderBy(asc(sprints.endDate))
-    .limit(1);
-  if (sprint)
-    result.activeSprint = { ...sprint, daysLeft: Math.max(0, diffDays(sprint.endDate, today)) };
-
-  const [wipRow] = await db
-    .select({ n: count() })
-    .from(activities)
-    .where(
-      and(
-        eq(activities.assigneeId, actor.id),
-        inArray(activities.status, ["in_progress"]),
-        eq(activities.pmApproval, "APPROVED"),
+  if (sprint) {
+    result.activeSprint = {
+      id: sprint.sprintKey,
+      sprintKey: sprint.sprintKey,
+      sprintNumber: sprint.sprintNumber,
+      name: sprint.label,
+      goal: null,
+      startDate: sprint.startDate,
+      endDate: sprint.deadline,
+      daysLeft: Math.max(0, diffDays(sprint.deadline, today)),
+    };
+    // Keys are zero-padded `YYYY-Snn`, so string order is sprint order.
+    result.carryOver = {
+      count: loaded.items.filter(
+        (i) =>
+          !i.isCompleted &&
+          (i.sprintKey
+            ? i.sprintKey < sprint.sprintKey
+            : i.dueDate !== null && i.dueDate < sprint.startDate),
+      ).length,
+    };
+    // Items tagged with this sprint; untagged items (project activities) count when their due date falls inside it.
+    result.sprintSummary = summarize(
+      loaded.items.filter((i) =>
+        i.sprintKey
+          ? i.sprintKey === sprint.sprintKey
+          : i.dueDate !== null && i.dueDate >= sprint.startDate && i.dueDate <= sprint.deadline,
       ),
     );
-  result.wip = { inProgress: wipRow?.n ?? 0 };
+  }
+
   return result;
 }

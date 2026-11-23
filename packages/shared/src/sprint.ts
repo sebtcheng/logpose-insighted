@@ -126,6 +126,25 @@ export function resolveStoredSprint(
   return null;
 }
 
+const isoDay = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
+export const refSprintsQuerySchema = z.object({ from: isoDay.optional(), to: isoDay.optional() });
+
+/** A row of ref.sprints as served by GET /ref/sprints. */
+export type RefSprintDto = {
+  sprintKey: string;
+  year: number;
+  sprintNumber: number;
+  startDate: string;
+  deadline: string;
+  label: string;
+  /** Contains today in Asia/Manila. */
+  isCurrent: boolean;
+};
+
+/** `Sprint 48 — Ends Sun, Nov 29, 2026`, built from a ref.sprints row. */
+export const formatRefSprintLabel = (s: Pick<RefSprintDto, "sprintNumber" | "deadline">): string =>
+  formatSprintLabel({ number: s.sprintNumber, endDate: s.deadline });
+
 /** Sprint fields every action DTO carries next to `targetDate`. */
 export type SprintFields = { sprintKey: string | null; sprintLabel: string | null };
 

@@ -6,6 +6,11 @@ import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { listSprintOptions } from "@myapp/shared";
 import { RequirementModal, stepsToDrafts } from "./RequirementModal";
 
+vi.mock("../api/lookups", async (orig) => {
+  const { mockUseRefSprints } = await import("../lib/testRefSprints");
+  return { ...(await orig<Record<string, unknown>>()), useRefSprints: mockUseRefSprints };
+});
+
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
 const STAFF = [

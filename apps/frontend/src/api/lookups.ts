@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import type {
   ProjectDto,
+  RefSprintDto,
   ReleaseDto,
   SprintDto,
   SubprojectDto,
@@ -9,15 +10,26 @@ import type {
 } from "@myapp/shared";
 import { api } from "./client";
 
+const REFERENCE_STALE_TIME = 5 * 60_000;
+
 // ---------------------------------------------------------------- lookups
+/** Canonical weekly sprints (ref.sprints). Rarely change, so one cached fetch serves every modal. */
+export const useRefSprints = () =>
+  useQuery({
+    queryKey: ["ref-sprints"],
+    staleTime: 60 * 60_000,
+    queryFn: async () => (await api.get<{ items: RefSprintDto[] }>("/ref/sprints")).items,
+  });
 export const useUsers = () =>
   useQuery({
     queryKey: ["users"],
+    staleTime: REFERENCE_STALE_TIME,
     queryFn: async () => (await api.get<{ items: UserDto[] }>("/users")).items,
   });
 export const useProjects = () =>
   useQuery({
     queryKey: ["projects"],
+    staleTime: REFERENCE_STALE_TIME,
     queryFn: async () => (await api.get<{ items: ProjectDto[] }>("/projects")).items,
   });
 export const useProjectsWithSubprojects = () =>
@@ -40,6 +52,7 @@ export const useSubprojects = (projectId: string | undefined, includeArchived = 
   useQuery({
     queryKey: ["subprojects", projectId, includeArchived],
     enabled: !!projectId,
+    staleTime: REFERENCE_STALE_TIME,
     queryFn: async () =>
       (
         await api.get<{ items: SubprojectDto[] }>(`/projects/${projectId}/subprojects`, {

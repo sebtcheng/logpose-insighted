@@ -1,3 +1,4 @@
+import { refSprints } from "./ref";
 import { sql } from "drizzle-orm";
 import {
   boolean,
@@ -75,7 +76,10 @@ export const raidMitigatingActions = pgTable(
     // Nullable in the DB so rows created before this column existed stay valid; the API requires it on write.
     targetDate: date("target_date", { mode: "string" }),
     // Weekly sprint (`YYYY-Snn`); target_date is kept equal to its Sunday end date. Null for legacy rows.
-    sprintKey: text("sprint_key"),
+    sprintKey: text("sprint_key").references(() => refSprints.sprintKey, {
+      onUpdate: "cascade",
+      onDelete: "set null",
+    }),
     pmApproval: text("pm_approval").$type<"PENDING" | "APPROVED">().notNull().default("PENDING"),
     // Staff responsible. Nullable like raid_items.owner_id (set null on user delete); the API requires it on write.
     responsibleId: uuid("responsible_id").references(() => users.id, { onDelete: "set null" }),

@@ -1,3 +1,4 @@
+import { refSprints } from "./ref";
 import { sql } from "drizzle-orm";
 import type { AnyPgColumn } from "drizzle-orm/pg-core";
 import {
@@ -73,7 +74,10 @@ export const ostSolutions = pgTable(
     ownerId: uuid("owner_id").references(() => users.id, { onDelete: "set null" }),
     targetDate: date("target_date", { mode: "string" }),
     // Weekly sprint (`YYYY-Snn`); target_date is kept equal to its Sunday end date. Null for legacy rows.
-    sprintKey: text("sprint_key"),
+    sprintKey: text("sprint_key").references(() => refSprints.sprintKey, {
+      onUpdate: "cascade",
+      onDelete: "set null",
+    }),
     pmApproval: text("pm_approval").$type<"PENDING" | "APPROVED">().notNull().default("PENDING"),
     convertedStoryId: uuid("converted_story_id").references((): AnyPgColumn => userStories.id, {
       onDelete: "set null",

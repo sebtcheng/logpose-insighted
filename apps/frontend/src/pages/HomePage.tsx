@@ -1,24 +1,14 @@
-import {
-  Alert,
-  Badge,
-  Card,
-  Group,
-  Paper,
-  Select,
-  Stack,
-  Switch,
-  Text,
-  Title,
-} from "@mantine/core";
+import { memo, useMemo } from "react";
+import { Alert, Badge, Card, Group, Select, Stack, Switch, Text, Title } from "@mantine/core";
 import { useLocalStorage } from "@mantine/hooks";
 import { useSearchParams } from "react-router-dom";
-import { sortTasksOngoingFirst, type HomeResponse, type HomeRow, type WorkItem } from "@myapp/shared";
 import {
-  SummaryStrip,
-  WorkItemsView,
-  WorkViewSwitch,
-  type WorkView,
-} from "../components/WorkItems";
+  sortTasksOngoingFirst,
+  type HomeResponse,
+  type HomeRow,
+  type WorkItem,
+} from "@myapp/shared";
+import { WorkItemsView, WorkViewSwitch, type WorkView } from "../components/WorkItems";
 import { useHome, useProjects, useSubprojects, useUsers, useCurrentProject } from "../api/hooks";
 import { useAuth, useIsPm } from "../auth";
 import { ActivityRow } from "../components/ActivityRow";
@@ -39,7 +29,7 @@ function groupBy(rows: HomeRow[]): Array<{ key: string; label: string; rows: Hom
   return [...map.values()];
 }
 
-function Section({
+const Section = memo(function Section({
   title,
   rows,
   grouped,
@@ -103,39 +93,334 @@ function Section({
       )}
     </Card>
   );
-}
+});
 
-function Header({ data }: { data: HomeResponse }) {
+const NAVY = "#0B2F5E";
+const GOLD = "#F5C83B";
+const BLUE = "#1E4E9C";
+const GREEN = "#12794F";
+const RED = "#D93A3A";
+const MISTY = "#EAF3F1";
+const LABEL_FONT = "Inter, system-ui, sans-serif";
+
+export const Header = memo(function Header({ data }: { data: HomeResponse }) {
+  const { sprintSummary, activeSprint, carryOver } = data;
+  const pct = activeSprint ? sprintSummary.completionRate : 0;
+
+  // The donut shows open versus finished work; Delayed and On Time are schedule views over the same tasks.
+  const donutSegments = [
+    { label: "Ongoing", value: sprintSummary.ongoing, color: BLUE },
+    { label: "Completed", value: sprintSummary.completed, color: GREEN },
+  ];
+  const donutTotal = donutSegments.reduce((acc, s) => acc + s.value, 0);
+  const size = 148;
+  const stroke = 18;
+  const radius = (size - stroke) / 2;
+  const circumference = 2 * Math.PI * radius;
+  let offset = 0;
+
+  const rows = [
+    { key: "ongoing", label: "Ongoing", value: sprintSummary.ongoing, bg: "#E1E8F4", fg: BLUE },
+    {
+      key: "completed",
+      label: "Completed",
+      value: sprintSummary.completed,
+      bg: "#E1F1E9",
+      fg: GREEN,
+    },
+  ];
+  const delayed = sprintSummary.delayed;
+  const label: React.CSSProperties = {
+    fontFamily: LABEL_FONT,
+    fontSize: "0.6875rem",
+    fontWeight: 600,
+    letterSpacing: "0.1em",
+    textTransform: "uppercase",
+  };
+  const tile: React.CSSProperties = {
+    borderRadius: 6,
+    padding: "8px 12px",
+    whiteSpace: "nowrap",
+    gap: 8,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+  };
+
   return (
-    <Paper withBorder p="lg" mb="lg" className="lp-card-lg">
-      <Group justify="space-between" align="flex-start" wrap="wrap">
-        <div>
-          <Text className="lp-label">
-            {data.activeSprint ? `Sprint goal · ${data.activeSprint.name}` : "Sprint goal"}
-          </Text>
-          <Text className="lp-summary-value">
-            {data.activeSprint ? (data.activeSprint.goal ?? "No goal set") : "No active sprint"}
-          </Text>
-          {data.activeSprint ? (
-            <Text size="sm" c="dimmed">
-              {data.activeSprint.daysLeft} day{data.activeSprint.daysLeft === 1 ? "" : "s"} left ·
-              ends {fmtDate(data.activeSprint.endDate)}
-            </Text>
+    <div
+      data-testid="sprint-telemetry-card"
+      style={{
+        display: "grid",
+        gridTemplateColumns: "minmax(0, 55fr) minmax(0, 45fr)",
+        gap: 16,
+        marginBottom: "var(--mantine-spacing-lg)",
+        fontFamily: LABEL_FONT,
+      }}
+    >
+      <div
+        data-testid="sprint-hero-panel"
+        style={{
+          background: NAVY,
+          color: "#FFFFFF",
+          borderTop: `3px solid ${RED}`,
+          borderRadius: 8,
+          padding: "20px 24px",
+          display: "flex",
+          flexDirection: "column",
+          gap: 16,
+        }}
+      >
+        <Group justify="space-between" align="flex-start" wrap="nowrap" gap="md">
+          <div>
+            <Text style={{ ...label, color: "#C9D6EA" }}>Current sprint</Text>
+            <Title
+              order={2}
+              style={{ color: "#FFFFFF", fontSize: "2.25rem", fontWeight: 700, lineHeight: 1.1 }}
+            >
+              {activeSprint ? activeSprint.name : "No active sprint"}
+            </Title>
+          </div>
+          {activeSprint ? (
+            <div
+              data-testid="sprint-days-left"
+              style={{
+                background: GOLD,
+                color: NAVY,
+                borderRadius: 8,
+                padding: "8px 14px",
+                display: "flex",
+                alignItems: "center",
+                gap: 10,
+                whiteSpace: "nowrap",
+              }}
+            >
+              <span style={{ fontSize: "2rem", fontWeight: 700, lineHeight: 1 }}>
+                {activeSprint.daysLeft}
+              </span>
+              <span style={{ display: "flex", flexDirection: "column", lineHeight: 1.2 }}>
+                <span style={{ fontSize: "0.8125rem", fontWeight: 700 }}>
+                  day{activeSprint.daysLeft === 1 ? "" : "s"} left
+                </span>
+                <span style={{ fontSize: "0.6875rem", fontWeight: 500 }}>
+                  Ends {fmtDate(activeSprint.endDate)}
+                </span>
+              </span>
+            </div>
           ) : null}
+        </Group>
+
+        <div>
+          <Text style={{ ...label, color: "#C9D6EA" }} mb={6}>
+            Current sprint progress
+          </Text>
+          <Group justify="space-between" align="baseline" mb={8}>
+            <Text size="sm" style={{ color: "#FFFFFF" }}>
+              {activeSprint
+                ? `${sprintSummary.completed} of ${sprintSummary.total} tasks completed`
+                : "No active sprint"}
+            </Text>
+            <Text
+              fw={700}
+              data-testid="sprint-progress-pct"
+              style={{ color: "#FFFFFF", fontSize: "1.5rem", lineHeight: 1 }}
+            >
+              {pct}%
+            </Text>
+          </Group>
+          <div
+            role="progressbar"
+            aria-label="Current sprint completion"
+            aria-valuenow={pct}
+            aria-valuemin={0}
+            aria-valuemax={100}
+            style={{
+              height: 10,
+              background: "rgba(255,255,255,0.16)",
+              borderRadius: 5,
+              overflow: "hidden",
+            }}
+          >
+            <div
+              style={{
+                width: `${pct}%`,
+                height: "100%",
+                background: GOLD,
+                borderRadius: 5,
+                transition: "width 160ms cubic-bezier(0.2, 0, 0, 1)",
+              }}
+            />
+          </div>
         </div>
-        <div style={{ textAlign: "right" }}>
-          <Text className="lp-label">Your work in progress</Text>
-          <Text className="lp-summary-value">{data.wip.inProgress}</Text>
+
+        {carryOver ? (
+          <div
+            data-testid="sprint-backlog"
+            style={{
+              background: "rgba(245, 200, 59, 0.12)",
+              borderLeft: `4px solid ${GOLD}`,
+              color: "#FFFFFF",
+              borderRadius: 8,
+              padding: "10px 14px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              gap: 12,
+            }}
+          >
+            <div>
+              <Text style={{ ...label, color: GOLD }}>Sprint Backlogs</Text>
+              <Text size="xs" style={{ color: "#C9D6EA" }}>
+                Open tasks carried over from previous sprints
+              </Text>
+            </div>
+            <Text style={{ color: "#FFFFFF", whiteSpace: "nowrap" }}>
+              <span style={{ fontSize: "1.5rem", fontWeight: 700, color: GOLD }}>
+                {carryOver.count}
+              </span>
+              <span style={{ fontSize: "0.8125rem" }}> task{carryOver.count === 1 ? "" : "s"}</span>
+            </Text>
+          </div>
+        ) : null}
+      </div>
+
+      <div
+        data-testid="task-breakdown-panel"
+        style={{
+          background: "#FFFFFF",
+          borderTop: `3px solid ${GOLD}`,
+          borderRadius: 8,
+          padding: "20px 24px",
+          display: "flex",
+          flexDirection: "column",
+          gap: 16,
+          boxShadow: "0 1px 3px rgba(15, 23, 42, 0.12)",
+        }}
+      >
+        <Text style={{ ...label, color: "#586679" }}>Task breakdown</Text>
+        <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
+          <div
+            data-testid="sprint-donut"
+            style={{ position: "relative", width: size, height: size, flexShrink: 0 }}
+          >
+            <svg
+              width={size}
+              height={size}
+              viewBox={`0 0 ${size} ${size}`}
+              role="img"
+              aria-label="Current sprint task breakdown"
+            >
+              <circle
+                cx={size / 2}
+                cy={size / 2}
+                r={radius}
+                fill="none"
+                stroke={MISTY}
+                strokeWidth={stroke}
+              />
+              {donutTotal > 0
+                ? donutSegments.map((seg) => {
+                    if (seg.value === 0) return null;
+                    const dash = (seg.value / donutTotal) * circumference;
+                    const dashOffset = -offset;
+                    offset += dash;
+                    return (
+                      <circle
+                        key={seg.label}
+                        cx={size / 2}
+                        cy={size / 2}
+                        r={radius}
+                        fill="none"
+                        stroke={seg.color}
+                        strokeWidth={stroke}
+                        strokeDasharray={`${dash} ${circumference - dash}`}
+                        strokeDashoffset={dashOffset}
+                        transform={`rotate(-90 ${size / 2} ${size / 2})`}
+                      />
+                    );
+                  })
+                : null}
+            </svg>
+            <div
+              style={{
+                position: "absolute",
+                inset: 0,
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "center",
+                pointerEvents: "none",
+              }}
+            >
+              <Text fw={700} style={{ fontSize: "2rem", lineHeight: 1.1, color: NAVY }}>
+                {donutTotal}
+              </Text>
+              <Text style={{ fontSize: "0.6875rem", color: BLUE }}>Total Tasks</Text>
+            </div>
+          </div>
+
+          <Stack gap={8} style={{ flex: 1, minWidth: 0 }}>
+            {rows.map((row) => (
+              <div
+                key={row.key}
+                data-testid={`kpi-tile-${row.key}`}
+                style={{ ...tile, background: row.bg, color: row.fg }}
+              >
+                <Group gap={8} align="center">
+                  <span
+                    style={{
+                      width: 8,
+                      height: 8,
+                      borderRadius: "50%",
+                      background: row.fg,
+                      display: "inline-block",
+                    }}
+                  />
+                  <Text size="xs" fw={600} style={{ color: row.fg }}>
+                    {row.label}
+                  </Text>
+                </Group>
+                <Text size="sm" fw={700} style={{ color: row.fg }}>
+                  {row.value}
+                </Text>
+              </div>
+            ))}
+            <div style={{ display: "flex", gap: 8 }}>
+              <div
+                data-testid="kpi-tile-delayed"
+                style={{
+                  ...tile,
+                  flex: 1,
+                  background: "#FBE6E9",
+                  color: RED,
+                  border: `1px solid ${RED}`,
+                }}
+              >
+                <Text size="xs" fw={600} style={{ color: "inherit" }}>
+                  Delayed
+                </Text>
+                <Text size="sm" fw={700} style={{ color: "inherit" }}>
+                  {delayed}
+                </Text>
+              </div>
+              <div
+                data-testid="kpi-tile-on-time"
+                style={{ ...tile, flex: 1, background: GREEN, color: "#FFFFFF" }}
+              >
+                <Text size="xs" fw={600} style={{ color: "inherit" }}>
+                  On Time
+                </Text>
+                <Text size="sm" fw={700} style={{ color: "inherit" }}>
+                  {sprintSummary.onTime}
+                </Text>
+              </div>
+            </div>
+          </Stack>
         </div>
-      </Group>
-      <div className="lp-rule" />
-      <Text className="lp-kicker" mb="sm">
-        All modules
-      </Text>
-      <SummaryStrip summary={data.summary} />
-    </Paper>
+      </div>
+    </div>
   );
-}
+});
 
 export function HomePage() {
   const user = useAuth();
@@ -157,8 +442,29 @@ export function HomePage() {
     defaultValue: "list",
   });
   const projects = useProjects();
-  const projectNames = new Map((projects.data ?? []).map((p) => [p.id, p.name]));
+  const projectNames = useMemo(
+    () => new Map((projects.data ?? []).map((p) => [p.id, p.name])),
+    [projects.data],
+  );
   const query = useHome({ assigneeId: filters.assigneeId, subprojectId: filters.subprojectId });
+  const homeData = query.data;
+
+  const sorted = useMemo(
+    () =>
+      homeData
+        ? {
+            thisWeek: sortTasksOngoingFirst(homeData.thisWeek),
+            nextWeek: sortTasksOngoingFirst(homeData.nextWeek),
+            thisMonth: sortTasksOngoingFirst(homeData.thisMonth),
+            later: sortTasksOngoingFirst(homeData.later),
+            modThisWeek: sortTasksOngoingFirst(homeData.moduleItems.thisWeek),
+            modNextWeek: sortTasksOngoingFirst(homeData.moduleItems.nextWeek),
+            modThisMonth: sortTasksOngoingFirst(homeData.moduleItems.thisMonth),
+            modLater: sortTasksOngoingFirst(homeData.moduleItems.later),
+          }
+        : null,
+    [homeData],
+  );
 
   const update = (next: typeof filters) =>
     setParams(applyHomeFilters(params, next), { replace: true });
@@ -231,24 +537,24 @@ export function HomePage() {
             ) : null}
             <Section
               title="This Week"
-              rows={sortTasksOngoingFirst(data.thisWeek)}
-              moduleRows={sortTasksOngoingFirst(data.moduleItems.thisWeek)}
+              rows={sorted?.thisWeek ?? []}
+              moduleRows={sorted?.modThisWeek ?? []}
               grouped={grouped}
               view={view}
               projectNames={projectNames}
             />
             <Section
               title="Next Week"
-              rows={sortTasksOngoingFirst(data.nextWeek)}
-              moduleRows={sortTasksOngoingFirst(data.moduleItems.nextWeek)}
+              rows={sorted?.nextWeek ?? []}
+              moduleRows={sorted?.modNextWeek ?? []}
               grouped={grouped}
               view={view}
               projectNames={projectNames}
             />
             <Section
               title="This Month"
-              rows={sortTasksOngoingFirst(data.thisMonth)}
-              moduleRows={sortTasksOngoingFirst(data.moduleItems.thisMonth)}
+              rows={sorted?.thisMonth ?? []}
+              moduleRows={sorted?.modThisMonth ?? []}
               grouped={grouped}
               view={view}
               projectNames={projectNames}

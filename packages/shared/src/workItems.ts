@@ -41,6 +41,8 @@ export const workItemSchema = z.object({
   isCompleted: z.boolean(),
   completedAt: z.string().nullable(),
   scheduleStatus: scheduleStatusSchema,
+  /** ref.sprints key the item is tagged with; null for untagged or project activities. */
+  sprintKey: z.string().nullable().optional(),
   /** PM sign-off; missing on legacy data means PENDING. Completion is only allowed when APPROVED. */
   pmApproval: pmApprovalSchema.optional(),
 });

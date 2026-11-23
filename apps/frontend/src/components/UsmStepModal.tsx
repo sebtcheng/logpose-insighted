@@ -207,6 +207,7 @@ export function UsmStepModal({
   onClose,
   canEdit,
   canDelete = canEdit,
+  canDeleteStep = canEdit,
   canTick,
 }: {
   step: UsmStepDto | undefined;
@@ -214,8 +215,10 @@ export function UsmStepModal({
   onClose: () => void;
   /** Add and edit: the PM and team members on an open project. */
   canEdit: boolean;
-  /** Delete a step or feature: the PM only. Defaults to canEdit. */
+  /** Delete a feature: the PM only. Defaults to canEdit. */
   canDelete?: boolean;
+  /** Delete a step: all authenticated roles on an open project. Defaults to canEdit. */
+  canDeleteStep?: boolean;
   canTick: boolean;
 }) {
   return (
@@ -227,6 +230,7 @@ export function UsmStepModal({
           onClose={onClose}
           canEdit={canEdit}
           canDelete={canDelete}
+          canDeleteStep={canDeleteStep}
           canTick={canTick}
         />
       ) : null}
@@ -239,12 +243,14 @@ function StepBody({
   onClose,
   canEdit,
   canDelete,
+  canDeleteStep,
   canTick,
 }: {
   step: UsmStepDto;
   onClose: () => void;
   canEdit: boolean;
   canDelete: boolean;
+  canDeleteStep: boolean;
   canTick: boolean;
 }) {
   const updateStep = useUpdateUsmStep();
@@ -278,11 +284,17 @@ function StepBody({
         onChange={(e) => setDescription(e.currentTarget.value)}
       />
       {canEdit ? (
-        <Group justify={canDelete ? "space-between" : "flex-end"}>
-          {canDelete ? (
+        <Group justify={canDeleteStep ? "space-between" : "flex-end"}>
+          {canDeleteStep ? (
             <Button
               variant="default"
               color="coral"
+              disabled={step.features.length > 0}
+              title={
+                step.features.length > 0
+                  ? "Remove all actions in this step before deleting it."
+                  : undefined
+              }
               loading={deleteStep.isPending}
               onClick={() =>
                 deleteStep.mutate(step.id, {

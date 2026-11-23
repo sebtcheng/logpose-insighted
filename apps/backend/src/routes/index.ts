@@ -5,6 +5,7 @@ import {
   createCommentSchema,
   createProjectSchema,
   createSprintSchema,
+  refSprintsQuerySchema,
   createSubprojectSchema,
   createTagSchema,
   createUserSchema,
@@ -22,6 +23,7 @@ import { z } from "zod";
 import { env } from "../env";
 import { badRequest, conflict, forbidden, unauthorized } from "../errors";
 import { logger } from "../logger";
+import { listRefSprints } from "../services/refSprintService";
 import { can } from "../permissions";
 import {
   actorOf,
@@ -291,6 +293,12 @@ api.patch(
   }),
 );
 
+api.get(
+  "/ref/sprints",
+  asyncHandler(async (req, res) => {
+    res.json({ items: await listRefSprints(parse(refSprintsQuerySchema, req.query)) });
+  }),
+);
 api.get(
   "/projects/:id/sprints",
   asyncHandler(async (req, res) => {

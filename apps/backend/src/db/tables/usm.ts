@@ -1,3 +1,4 @@
+import { refSprints } from "./ref";
 import { sql } from "drizzle-orm";
 import {
   boolean,
@@ -64,7 +65,7 @@ export const usmStepFeatures = pgTable(
       .references(() => projects.id, { onDelete: "cascade" }),
     stepId: uuid("step_id")
       .notNull()
-      .references(() => usmSteps.id, { onDelete: "cascade" }),
+      .references(() => usmSteps.id, { onDelete: "restrict" }),
     title: text("title").notNull(),
     isCompleted: boolean("is_completed").notNull().default(false),
     completedAt: timestamp("completed_at", { withTimezone: true }),
@@ -72,7 +73,10 @@ export const usmStepFeatures = pgTable(
     responsibleId: uuid("responsible_id").references(() => users.id, { onDelete: "set null" }),
     targetDate: date("target_date", { mode: "string" }),
     // Weekly sprint (`YYYY-Snn`); target_date is kept equal to its Sunday end date. Null for legacy rows.
-    sprintKey: text("sprint_key"),
+    sprintKey: text("sprint_key").references(() => refSprints.sprintKey, {
+      onUpdate: "cascade",
+      onDelete: "set null",
+    }),
     pmApproval: text("pm_approval").$type<"PENDING" | "APPROVED">().notNull().default("PENDING"),
     sortOrder: integer("sort_order").notNull().default(0),
     createdAt: createdAt(),

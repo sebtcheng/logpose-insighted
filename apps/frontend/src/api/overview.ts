@@ -5,7 +5,8 @@ import { api } from "./client";
 // ---------------------------------------------------------------- home, workload, search
 export const useHome = (params: { assigneeId?: string; subprojectId?: string }) =>
   useQuery({
-    queryKey: ["home", params],
+    queryKey: ["home", params.assigneeId ?? null, params.subprojectId ?? null],
+    placeholderData: keepPreviousData,
     queryFn: () => api.get<HomeResponse>("/home", params),
   });
 

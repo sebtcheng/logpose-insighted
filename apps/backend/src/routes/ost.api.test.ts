@@ -208,24 +208,25 @@ describe("OST API", () => {
     expect(opp).not.toHaveProperty("description");
   });
 
-  it("lets only a PM mark a solution validated, which drives the convert gate", async () => {
+  it("lets any authenticated role mark an approved solution validated, which drives the convert gate", async () => {
     const sol = await newSolution("Marked");
-    expect(
-      (await member.patch(`/api/ost/solutions/${sol.id}`).send({ validationStatus: "validated" }))
-        .status,
-    ).toBe(403);
     const pending = await pm
       .patch(`/api/ost/solutions/${sol.id}`)
       .send({ validationStatus: "validated" });
     expect(pending.status).toBe(403);
     await approveAll(f.project.id);
-    const ok = await pm
+    const memberOk = await member
       .patch(`/api/ost/solutions/${sol.id}`)
       .send({ validationStatus: "validated" });
-    expect(ok.status).toBe(200);
+    expect(memberOk.status).toBe(200);
     expect((await tree()).solutions.find((s) => s.id === sol.id)?.validationStatus).toBe(
       "validated",
     );
+    const pmOk = await pm
+      .patch(`/api/ost/solutions/${sol.id}`)
+      .send({ validationStatus: "planned" });
+    expect(pmOk.status).toBe(200);
+    await pm.patch(`/api/ost/solutions/${sol.id}`).send({ validationStatus: "validated" });
   });
 
   it("blocks converting an unvalidated solution, allows a logged PM override", async () => {

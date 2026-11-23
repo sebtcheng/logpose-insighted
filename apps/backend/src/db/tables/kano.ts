@@ -1,3 +1,4 @@
+import { refSprints } from "./ref";
 import { sql } from "drizzle-orm";
 import {
   boolean,
@@ -63,7 +64,10 @@ export const kanoRequestSpecs = pgTable(
     // Per-spec tagging. Same shapes as kano_requests.target_date / responsible_id (the request-level date is deprecated).
     targetDate: date("target_date", { mode: "string" }),
     // Weekly sprint (`YYYY-Snn`); target_date is kept equal to its Sunday end date. Null for legacy rows.
-    sprintKey: text("sprint_key"),
+    sprintKey: text("sprint_key").references(() => refSprints.sprintKey, {
+      onUpdate: "cascade",
+      onDelete: "set null",
+    }),
     pmApproval: text("pm_approval").$type<"PENDING" | "APPROVED">().notNull().default("PENDING"),
     responsibleId: uuid("responsible_id").references(() => users.id, { onDelete: "set null" }),
     createdAt: createdAt(),

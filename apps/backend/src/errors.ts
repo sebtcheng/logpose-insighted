@@ -49,6 +49,10 @@ export function pgErrorOf(err: unknown): PgErrorShape | null {
 }
 
 const CONSTRAINT_MESSAGES: Record<string, [number, string]> = {
+  usm_step_features_sprint_key_sprints_sprint_key_fk: [422, "Unknown sprint"],
+  ost_solutions_sprint_key_sprints_sprint_key_fk: [422, "Unknown sprint"],
+  kano_request_specs_sprint_key_sprints_sprint_key_fk: [422, "Unknown sprint"],
+  raid_mitigating_actions_sprint_key_sprints_sprint_key_fk: [422, "Unknown sprint"],
   activities_done_is_100: [422, "An activity must be 100% complete to be done"],
   activities_percent_range: [422, "Percent complete must be between 0 and 100"],
   activities_blocked_has_reason: [422, "A blocked activity needs a reason"],

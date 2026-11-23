@@ -18,3 +18,4 @@ export * from "./tables/stories";
 export * from "./tables/usm";
 export * from "./tables/kano";
 export * from "./tables/raid";
+export * from "./tables/ref";

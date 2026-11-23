@@ -277,14 +277,33 @@ export async function updateStep(id: string, patch: UpdateUsmStepInput): Promise
   return stepDto(db, id);
 }
 
-/** Deletes the step (its features cascade) and closes the gap in sort_order. */
+/** Deletes an empty step and closes the gap in sort_order. Rejects with 409 if child actions exist. */
 export async function deleteStep(id: string) {
   await db.transaction(async (tx) => {
-    const [row] = await tx.delete(usmSteps).where(eq(usmSteps.id, id)).returning({
-      personaId: usmSteps.personaId,
-    });
-    if (!row) throw notFound("Step");
-    await normalizeSteps(tx, row.personaId);
+    const existingFeatures = await tx
+      .select({ id: usmStepFeatures.id })
+      .from(usmStepFeatures)
+      .where(eq(usmStepFeatures.stepId, id))
+      .limit(1);
+    if (existingFeatures.length > 0) {
+      throw conflict(
+        "Cannot delete a step that still contains actions. Remove all actions in this step first.",
+      );
+    }
+    try {
+      const [row] = await tx.delete(usmSteps).where(eq(usmSteps.id, id)).returning({
+        personaId: usmSteps.personaId,
+      });
+      if (!row) throw notFound("Step");
+      await normalizeSteps(tx, row.personaId);
+    } catch (err) {
+      if (typeof err === "object" && err !== null && "code" in err && err.code === "23503") {
+        throw conflict(
+          "Cannot delete a step that still contains actions. Remove all actions in this step first.",
+        );
+      }
+      throw err;
+    }
   });
 }
 
