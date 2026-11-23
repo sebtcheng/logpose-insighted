@@ -511,7 +511,7 @@ export function RaidPage() {
       >
         {(items) =>
           viewMode === "card" ? (
-            <RaidCards items={items} canEdit={!readOnly} canDelete={isPm} onEdit={openEdit} />
+            <RaidCards items={items} canEdit={!readOnly} canDelete={!readOnly} onEdit={openEdit} />
           ) : (
             <div className="raid-card">
               <Table.ScrollContainer minWidth={960}>
@@ -565,7 +565,7 @@ export function RaidPage() {
                         </Table.Td>
                         <Table.Td>
                           {!readOnly ? (
-                            <RaidActions item={i} onEdit={openEdit} canDelete={isPm} />
+                            <RaidActions item={i} onEdit={openEdit} canDelete={!readOnly} />
                           ) : null}
                         </Table.Td>
                       </Table.Tr>

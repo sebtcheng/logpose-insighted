@@ -26,6 +26,7 @@ import {
   useUsers,
 } from "../api/hooks";
 import { useIsPm } from "../auth";
+import { DeleteButton } from "../components/DeleteButton";
 import { PageHeader, QueryState, toast } from "../components/ui";
 import {
   draftsToSpecs,
@@ -232,33 +233,23 @@ export function EditModal({
               {...form.getInputProps("responsibleId")}
             />
           </Group>
-          <Group justify="space-between">
-            <Group gap="xs">
-              {isPm ? (
-                <Button
-                  variant="subtle"
-                  color="coral"
-                  onClick={() => {
-                    if (window.confirm(`Delete ${request.code}? This cannot be undone.`)) {
-                      remove.mutate(request.id, {
-                        onSuccess: onClose,
-                        onError: (e) => toast.error(e.message),
-                      });
-                    }
-                  }}
-                >
-                  Delete
-                </Button>
-              ) : null}
-            </Group>
-            <Group>
-              <Button variant="default" onClick={onClose}>
+          <Group justify="flex-end" gap="xs">
+            <DeleteButton
+              confirmMessage={`Delete ${request.code}? This cannot be undone.`}
+              loading={remove.isPending}
+              onConfirm={() => {
+                remove.mutate(request.id, {
+                  onSuccess: onClose,
+                  onError: (e) => toast.error(e.message),
+                });
+              }}
+            />
+            <Button variant="default" onClick={onClose}>
                 Cancel
               </Button>
-              <Button type="submit" loading={update.isPending}>
-                Save
-              </Button>
-            </Group>
+            <Button type="submit" loading={update.isPending}>
+              Save
+            </Button>
           </Group>
         </Stack>
       </form>

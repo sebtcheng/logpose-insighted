@@ -213,7 +213,7 @@ function SolutionTableRow({ s, ctx }: { s: SolutionDto; ctx: OstCtx }) {
               : undefined
           }
           onDelete={
-            pmOnly
+            canEdit
               ? () => {
                   if (window.confirm(`Delete ${s.code}?`)) {
                     remove.mutate(s.id, { onError: (e) => toast.error(e.message) });

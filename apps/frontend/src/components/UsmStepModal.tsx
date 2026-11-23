@@ -287,8 +287,8 @@ function StepBody({
         <Group justify={canDeleteStep ? "space-between" : "flex-end"}>
           {canDeleteStep ? (
             <Button
-              variant="default"
-              color="coral"
+              variant="outline"
+              color="red"
               disabled={step.features.length > 0}
               title={
                 step.features.length > 0

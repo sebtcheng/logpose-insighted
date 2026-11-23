@@ -94,7 +94,7 @@ function SolutionRow({ s, ctx }: { s: SolutionDto; ctx: OstCtx }) {
               ctx.setDialog({ kind: "solution", opportunityId: s.opportunityId, existing: s })
             }
             onDelete={
-              !pmOnly
+              ctx.readOnly
                 ? undefined
                 : () => {
                     if (window.confirm(`Delete ${s.code}?`)) {
@@ -117,7 +117,6 @@ function OpportunityNode({ o, ctx }: { o: OpportunityDto; ctx: OstCtx }) {
   // Add and edit are open to team members (the server scopes them to their projects); deleting, ticking
   // (validating) and converting stay with the PM.
   const canEdit = !ctx.readOnly;
-  const pmOnly = ctx.isPm && !ctx.readOnly;
   return (
     <Card withBorder p="sm" mb="xs">
       <Group justify="space-between" align="flex-start" wrap="wrap">
@@ -155,7 +154,7 @@ function OpportunityNode({ o, ctx }: { o: OpportunityDto; ctx: OstCtx }) {
               ctx.setDialog({ kind: "opportunity", outcomeId: o.outcomeId, existing: o })
             }
             onDelete={
-              !pmOnly
+              ctx.readOnly
                 ? undefined
                 : () => {
                     if (window.confirm(`Delete "${o.title}" with its solutions?`)) {
@@ -200,7 +199,6 @@ function OutcomeHeader({
   // Add and edit are open to team members (the server scopes them to their projects); deleting, ticking
   // (validating) and converting stay with the PM.
   const canEdit = !ctx.readOnly;
-  const pmOnly = ctx.isPm && !ctx.readOnly;
   return (
     <Group justify="space-between" align="flex-start" wrap="wrap" gap="sm">
       <div style={{ minWidth: 0 }}>
@@ -216,7 +214,7 @@ function OutcomeHeader({
           scope="outcome"
           onEdit={() => ctx.setDialog({ kind: "outcome", existing: outcome })}
           onDelete={
-            !pmOnly
+            ctx.readOnly
               ? undefined
               : () => {
                   if (window.confirm(`Delete this outcome and everything under it?`)) {
