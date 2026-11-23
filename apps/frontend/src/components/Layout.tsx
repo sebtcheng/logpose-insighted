@@ -56,6 +56,12 @@ function Icon({ children, size = 20 }: { children: ReactNode; size?: number }) {
 
 const ICONS = {
   home: <path d="M3 11l9-8 9 8M5 10v10h5v-6h4v6h5V10" />,
+  history: (
+    <>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 7v5l3 2" />
+    </>
+  ),
   workload: <path d="M4 20V10M10 20V4M16 20v-8M22 20H2" />,
   projects: <path d="M3 6a2 2 0 012-2h4l2 3h8a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2z" />,
   ost: <path d="M12 3v6M12 9H5v5M12 9h7v5M3 14h4v5H3zM17 14h4v5h-4zM10 14h4v5h-4z" />,

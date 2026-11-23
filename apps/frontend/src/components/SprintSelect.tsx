@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { Select } from "@mantine/core";
-import { formatRefSprintLabel, resolveStoredSprint, sprintFromKey } from "@myapp/shared";
+import { formatRefSprintLabel, manilaToday, resolveStoredSprint } from "@myapp/shared";
 import { useRefSprints } from "../api/lookups";
 
 /** Draft value for a stored row: its sprint key, or the sprint containing a legacy date; "" when unassigned. */
@@ -13,6 +13,8 @@ export const sprintDraftValue = (
  * Weekly sprint picker (Monday-Sunday, Asia/Manila). Every option shows the sprint number and the Sunday it ends.
  * The current value is always kept in the list so editing an old item never drops its sprint.
  */
+const TODAY = manilaToday();
+
 export function SprintSelect({
   value,
   onChange,
@@ -36,21 +38,14 @@ export function SprintSelect({
 }) {
   const { data: sprints } = useRefSprints();
   const data = useMemo(() => {
-    const options = (sprints ?? []).map((s) => ({
-      value: s.sprintKey,
-      label: formatRefSprintLabel(s),
-    }));
-    // An already-assigned sprint outside the fetched window stays selectable so editing never drops it.
-    const kept = value && !options.some((o) => o.value === value) ? sprintFromKey(value) : null;
-    if (kept) {
-      options.push({
-        value: kept.key,
-        label: formatRefSprintLabel({ sprintNumber: kept.number, deadline: kept.endDate }),
-      });
-      options.sort((a, b) => a.value.localeCompare(b.value));
-    }
+    const options = (sprints ?? [])
+      .filter((s) => s.deadline >= TODAY)
+      .map((s) => ({
+        value: s.sprintKey,
+        label: formatRefSprintLabel(s),
+      }));
     return options;
-  }, [sprints, value]);
+  }, [sprints]);
   return (
     <Select
       aria-label={ariaLabel}

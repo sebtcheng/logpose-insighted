@@ -3,9 +3,9 @@ import { sprintColumns, sprintColumnsOrUndefined } from "./sprintWrite";
 
 describe("sprintWrite", () => {
   it("derives the Sunday end date from a sprint key, overriding a stale date", () => {
-    expect(sprintColumns({ sprintKey: "2026-S47", targetDate: "2026-01-01" })).toEqual({
-      sprintKey: "2026-S47",
-      targetDate: "2026-11-22",
+    expect(sprintColumns({ sprintKey: "2026-S48", targetDate: "2026-01-01" })).toEqual({
+      sprintKey: "2026-S48",
+      targetDate: "2026-11-29",
     });
   });
 
@@ -19,7 +19,8 @@ describe("sprintWrite", () => {
     expect(sprintColumnsOrUndefined({})).toBeUndefined();
   });
 
-  it("rejects unknown sprints with a 422", () => {
+  it("rejects unknown and past sprints with a 422", () => {
     expect(() => sprintColumns({ sprintKey: "2026-S99" })).toThrow(/Unknown sprint/);
+    expect(() => sprintColumns({ sprintKey: "2025-S48" })).toThrow(/Past sprint/);
   });
 });

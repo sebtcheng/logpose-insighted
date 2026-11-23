@@ -4,6 +4,7 @@ import { AuthGate, useIsPm } from "./auth";
 import { AdminLogPage } from "./pages/AdminLogPage";
 import { Layout } from "./components/Layout";
 import { HomePage } from "./pages/HomePage";
+import { HistoryPage } from "./pages/HistoryPage";
 import { LoginPage } from "./pages/LoginPage";
 import { OstPage } from "./pages/OstPage";
 import { ProjectPage } from "./pages/ProjectPage";
@@ -32,6 +33,7 @@ export function App() {
         }
       >
         <Route index element={<HomePage />} />
+        <Route path="history" element={<HistoryPage />} />
         <Route path="workload" element={<WorkloadPage />} />
         <Route path="projects" element={<ProjectsPage />} />
         <Route path="projects/:projectId" element={<ProjectPage />} />
