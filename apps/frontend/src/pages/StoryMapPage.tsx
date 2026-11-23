@@ -25,7 +25,6 @@ import {
   useUsmPersonas,
   useUsmSteps,
 } from "../api/hooks";
-import { useIsPm } from "../auth";
 import { SideModal } from "../components/SideModal";
 import { UsmStepModal } from "../components/UsmStepModal";
 import { PageHeader, QueryState, toast } from "../components/ui";
@@ -360,7 +359,6 @@ function AddUser({ projectId, onAdded }: { projectId: string; onAdded: (id: stri
 }
 
 export function StoryMapPage() {
-  const isPm = useIsPm();
   // Team members add and edit User Story Mapping in their projects (the server scopes them); deleting is the PM's.
   const canAdd = true;
   const [params, setParams] = useSearchParams();
@@ -504,7 +502,7 @@ export function StoryMapPage() {
         opened={!!openStep}
         onClose={() => setOpenId(null)}
         canEdit={canAdd && !readOnly}
-        canDelete={isPm && !readOnly}
+        canDelete={!readOnly}
         canDeleteStep={!readOnly}
         canTick={!readOnly}
       />
