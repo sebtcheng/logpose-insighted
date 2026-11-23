@@ -46,10 +46,10 @@ const Section = memo(function Section({
   view: WorkView;
   projectNames: Map<string, string>;
 }) {
-  const isNextWeek = title === "Next Week";
+  const isNextWeek = title === "Next Sprint";
   const risky = isNextWeek ? rows.filter((r) => r.atRisk) : [];
   return (
-    <Card withBorder padding={0} className={title === "This Week" ? "lp-card-coral" : undefined}>
+    <Card withBorder padding={0} className={title === "Current Sprint" ? "lp-card-coral" : undefined}>
       <Group justify="space-between" p="md" style={{ borderBottom: "var(--outline)" }}>
         <Title order={2} className="lp-section-title">
           {title}
@@ -536,7 +536,7 @@ export function HomePage() {
               </Alert>
             ) : null}
             <Section
-              title="This Week"
+              title="Current Sprint"
               rows={sorted?.thisWeek ?? []}
               moduleRows={sorted?.modThisWeek ?? []}
               grouped={grouped}
@@ -544,7 +544,7 @@ export function HomePage() {
               projectNames={projectNames}
             />
             <Section
-              title="Next Week"
+              title="Next Sprint"
               rows={sorted?.nextWeek ?? []}
               moduleRows={sorted?.modNextWeek ?? []}
               grouped={grouped}
@@ -552,7 +552,7 @@ export function HomePage() {
               projectNames={projectNames}
             />
             <Section
-              title="This Month"
+              title="Upcoming Sprints"
               rows={sorted?.thisMonth ?? []}
               moduleRows={sorted?.modThisMonth ?? []}
               grouped={grouped}
@@ -581,16 +581,6 @@ export function HomePage() {
                 ) : undefined
               }
             />
-            {data.later.length + data.moduleItems.later.length > 0 ? (
-              <Section
-                title="Later"
-                rows={sortTasksOngoingFirst(data.later)}
-                moduleRows={sortTasksOngoingFirst(data.moduleItems.later)}
-                grouped={grouped}
-                view={view}
-                projectNames={projectNames}
-              />
-            ) : null}
             <Text size="xs" c="dimmed">
               Weeks start on Monday ({data.timezone}). Items with no due date are not shown here.
             </Text>

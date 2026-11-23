@@ -1,6 +1,8 @@
 import { Router } from "express";
+import { z } from "zod";
 import { projectWorkItemsQuerySchema, searchQuerySchema } from "@myapp/shared";
 import { actorOf, asyncHandler, idParam, parse } from "../middleware";
+import { getSprintHistory } from "../services/historyService";
 import { search } from "../services/searchService";
 import { getVisibleProjectIds } from "../services/visibilityService";
 import { getPersonItems, getWorkload } from "../services/workloadService";
@@ -39,5 +41,21 @@ readModels.get(
   asyncHandler(async (req, res) => {
     const { q, limit } = parse(searchQuerySchema, req.query);
     res.json(await search(q, limit, await getVisibleProjectIds(actorOf(res))));
+  }),
+);
+
+const historyQuerySchema = z.object({
+  projectId: z.string().uuid().optional(),
+  assigneeId: z.string().uuid().optional(),
+  startDate: z.string().optional(),
+  endDate: z.string().optional(),
+});
+
+readModels.get(
+  "/history",
+  asyncHandler(async (req, res) => {
+    const q = parse(historyQuerySchema, req.query);
+    const actor = actorOf(res);
+    res.json(await getSprintHistory(actor, q, await getVisibleProjectIds(actor)));
   }),
 );

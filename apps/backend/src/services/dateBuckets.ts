@@ -78,11 +78,10 @@ export function bucketFor(
     if (!item.completedDate || item.completedDate < r.weekStart || item.completedDate > r.weekEnd)
       return null;
     if (due >= r.nextWeekStart && due <= r.nextWeekEnd) return "nextWeek";
-    if (due > r.nextWeekEnd && due <= r.monthEnd) return "thisMonth";
+    if (due > r.nextWeekEnd) return "thisMonth";
     return "thisWeek";
   }
   if (due <= r.weekEnd) return "thisWeek";
   if (due <= r.nextWeekEnd) return "nextWeek";
-  if (due <= r.monthEnd) return "thisMonth";
-  return "later";
+  return "thisMonth";
 }

@@ -68,12 +68,13 @@ describe("SprintSelect", () => {
     for (const l of labels) expect(l).toMatch(/^Sprint \d+ — Ends Sun, \w{3} \d{1,2}, \d{4}$/);
   });
 
-  it("keeps a past sprint that is already assigned and reports selections", () => {
-    const { input, options, onChange } = mount("2026-S10");
-    expect(input.value).toBe("Sprint 10 — Ends Sun, Mar 8, 2026");
+  it("excludes past sprints and reports current/future selections", () => {
+    const { input, options, onChange } = mount("");
     act(() => input.click());
-    const other = options().find((o) => !o.textContent.startsWith("Sprint 10 "))!;
-    act(() => other.click());
+    const labels = options().map((o) => o.textContent ?? "");
+    expect(labels.some((l) => l.includes("2025"))).toBe(false);
+    const first = options()[0]!;
+    act(() => first.click());
     expect(onChange).toHaveBeenCalledWith(expect.stringMatching(/^\d{4}-S\d{2}$/));
   });
 

@@ -7,8 +7,8 @@ const DAY_MS = 86_400_000;
 const addDays = (date: string, days: number): string =>
   new Date(Date.parse(`${date}T00:00:00Z`) + days * DAY_MS).toISOString().slice(0, 10);
 
-/** Default selectable window: one year back (so recent history stays editable) to 26 weeks ahead. */
-export const REF_SPRINT_DEFAULT_PAST_DAYS = 365;
+/** Default selectable window: current sprint (today) through 26 weeks ahead. Past sprints are excluded. */
+export const REF_SPRINT_DEFAULT_PAST_DAYS = 0;
 export const REF_SPRINT_DEFAULT_AHEAD_DAYS = 26 * 7;
 
 /** ref.sprints rows overlapping [from, to] (defaults above), oldest first, each flagged when it contains today in Manila. */

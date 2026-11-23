@@ -6,7 +6,12 @@ import type {
   WorkItemsQuery,
   WorkSourceModule,
 } from "@myapp/shared";
-import { compareByStatusOngoingFirst, matchesWorkStatus, resolveAssignee } from "@myapp/shared";
+import {
+  compareByStatusOngoingFirst,
+  matchesWorkStatus,
+  resolveAssignee,
+  resolveStoredSprint,
+} from "@myapp/shared";
 import { db } from "../db/client";
 import {
   activities,
@@ -299,7 +304,14 @@ export async function loadWorkItems(
         dueDate: r.dueDate,
         isCompleted: r.isCompleted,
         completedAt: r.completedAt ? r.completedAt.toISOString() : null,
-        scheduleStatus: classifySchedule(r, today, timeZone),
+        scheduleStatus: classifySchedule(
+          {
+            ...r,
+            sprintEndDate: resolveStoredSprint(r.sprintKey, r.dueDate)?.endDate ?? null,
+          },
+          today,
+          timeZone,
+        ),
         pmApproval: r.pmApproval ?? "PENDING",
         sprintKey: r.sprintKey ?? null,
       };

@@ -15,7 +15,12 @@ export { resolveAssignee, type PersonCandidate };
 /** Pure classification and rollups for unified work items. All dates are YYYY-MM-DD in the app timezone. */
 
 export function classifySchedule(
-  input: { dueDate: string | null; isCompleted: boolean; completedAt: Date | null },
+  input: {
+    dueDate: string | null;
+    isCompleted: boolean;
+    completedAt: Date | null;
+    sprintEndDate?: string | null;
+  },
   today: string,
   timeZone: string,
 ): ScheduleStatus {
@@ -25,6 +30,7 @@ export function classifySchedule(
       ? "completed_on_time"
       : "completed_delayed";
   }
+  if (input.sprintEndDate && input.sprintEndDate >= today) return "ongoing_on_time";
   if (!input.dueDate) return "no_due_date";
   return input.dueDate >= today ? "ongoing_on_time" : "delayed";
 }
