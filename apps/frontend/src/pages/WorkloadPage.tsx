@@ -1,9 +1,9 @@
 import {
-  Badge,
   Button,
   Checkbox,
   Collapse,
   Group,
+  Progress,
   Stack,
   Table,
   Text,
@@ -12,20 +12,49 @@ import {
 } from "@mantine/core";
 import { Fragment, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { sortTasksOngoingFirst, type WorkItem, type WorkMemberRollup } from "@myapp/shared";
+import { sortTasksOngoingFirst, type WorkItem, type WorkloadSprintMetrics } from "@myapp/shared";
 import { ColumnHeader, compareNullable, toggleSortConfig, type SortConfig } from "../components/ColumnHeader";
 import { WorkItemsTable } from "../components/WorkItems";
 import { useProjects, useWorkload } from "../api/hooks";
 import { PageHeader, QueryState } from "../components/ui";
 
-function MemberCells({ m }: { m: WorkMemberRollup | undefined }) {
+const NUM_STYLE = { fontVariantNumeric: "tabular-nums" as const };
+
+function SprintMetricCells({ m }: { m: WorkloadSprintMetrics }) {
+  const pct =
+    m.currentSprintTotal > 0
+      ? Math.round((m.currentSprintCompleted / m.currentSprintTotal) * 100)
+      : 0;
   return (
     <>
-      <Table.Td>{m?.total ?? 0}</Table.Td>
-      <Table.Td>{m?.ongoing ?? 0}</Table.Td>
-      <Table.Td>{m?.onTime ?? 0}</Table.Td>
-      <Table.Td>{m && m.delayed > 0 ? <Badge color="coral">{m.delayed}</Badge> : 0}</Table.Td>
-      <Table.Td>{m?.completed ?? 0}</Table.Td>
+      <Table.Td miw={160}>
+        <Stack gap={4}>
+          <Group justify="space-between" gap="xs">
+            <Text size="sm" fw={700} style={NUM_STYLE}>
+              {m.currentSprintCompleted} / {m.currentSprintTotal}
+            </Text>
+            <Text size="xs" c="dimmed" fw={600} style={NUM_STYLE}>
+              {pct}%
+            </Text>
+          </Group>
+          <Progress value={pct} size="sm" radius="sm" aria-label="Current sprint progress" />
+        </Stack>
+      </Table.Td>
+      <Table.Td>
+        <Text size="md" fw={700} c="red.7" style={NUM_STYLE}>
+          {m.sprintBacklog}
+        </Text>
+      </Table.Td>
+      <Table.Td>
+        <Text size="md" fw={700} style={NUM_STYLE}>
+          {m.upcomingSprintsTotal}
+        </Text>
+      </Table.Td>
+      <Table.Td>
+        <Text size="md" fw={700} style={NUM_STYLE}>
+          {m.completedTasksTotal}
+        </Text>
+      </Table.Td>
     </>
   );
 }
@@ -51,23 +80,19 @@ type WorkloadSortKey =
   | "person"
   | "owner"
   | "teamMember"
-  | "dueThisWeek"
-  | "total"
-  | "ongoing"
-  | "onTime"
-  | "delayed"
-  | "completed";
+  | "currentSprintProgress"
+  | "sprintBacklog"
+  | "upcomingSprints"
+  | "completedTasks";
 type WorkloadNumKey = Exclude<WorkloadSortKey, "person">;
 
 const NUM_COLS: Array<{ key: WorkloadNumKey; label: string }> = [
   { key: "owner", label: "Owner" },
-  { key: "teamMember", label: "Team member" },
-  { key: "dueThisWeek", label: "Due this week" },
-  { key: "total", label: "All tasks" },
-  { key: "ongoing", label: "Ongoing" },
-  { key: "onTime", label: "On time" },
-  { key: "delayed", label: "Delayed" },
-  { key: "completed", label: "Completed" },
+  { key: "teamMember", label: "Team Member" },
+  { key: "currentSprintProgress", label: "Current Sprint Progress" },
+  { key: "sprintBacklog", label: "Sprint Backlog" },
+  { key: "upcomingSprints", label: "Upcoming Sprints" },
+  { key: "completedTasks", label: "Completed Tasks" },
 ];
 
 export function WorkloadPage() {
@@ -111,24 +136,21 @@ export function WorkloadPage() {
             r: (typeof data.items)[number],
             key: WorkloadNumKey,
           ): number => {
-            const m = byUser.get(r.userId);
             switch (key) {
               case "owner":
                 return r.ownedProjectsCount ?? 0;
               case "teamMember":
                 return r.teamMemberProjectsCount ?? 0;
-              case "dueThisWeek":
-                return r.dueThisWeek;
-              case "total":
-                return m?.total ?? 0;
-              case "ongoing":
-                return m?.ongoing ?? 0;
-              case "onTime":
-                return m?.onTime ?? 0;
-              case "delayed":
-                return m?.delayed ?? 0;
-              case "completed":
-                return m?.completed ?? 0;
+              case "currentSprintProgress":
+                return r.currentSprintTotal > 0
+                  ? Math.round((r.currentSprintCompleted / r.currentSprintTotal) * 100)
+                  : 0;
+              case "sprintBacklog":
+                return r.sprintBacklog ?? 0;
+              case "upcomingSprints":
+                return r.upcomingSprintsTotal ?? 0;
+              case "completedTasks":
+                return r.completedTasksTotal ?? 0;
             }
           };
           const qPerson = personFilter.trim().toLowerCase();
@@ -234,14 +256,21 @@ export function WorkloadPage() {
                             {r.fullName}
                           </UnstyledButton>
                         </Table.Td>
-                        <Table.Td data-col="owner">{r.ownedProjectsCount ?? 0}</Table.Td>
-                        <Table.Td data-col="team-member">{r.teamMemberProjectsCount ?? 0}</Table.Td>
-                        <Table.Td>{r.dueThisWeek}</Table.Td>
-                        <MemberCells m={byUser.get(r.userId)} />
+                        <Table.Td data-col="owner">
+                          <Text size="md" fw={700} style={NUM_STYLE}>
+                            {r.ownedProjectsCount ?? 0}
+                          </Text>
+                        </Table.Td>
+                        <Table.Td data-col="team-member">
+                          <Text size="md" fw={700} style={NUM_STYLE}>
+                            {r.teamMemberProjectsCount ?? 0}
+                          </Text>
+                        </Table.Td>
+                        <SprintMetricCells m={r} />
                       </Table.Tr>
                       <Table.Tr key={`${r.userId}-items`}>
                         <Table.Td
-                          colSpan={9}
+                          colSpan={7}
                           p={0}
                           style={{ borderBottom: expanded === r.userId ? undefined : "none" }}
                         >
@@ -269,13 +298,30 @@ export function WorkloadPage() {
                             {expanded === "unassigned" ? "▾ " : "▸ "}Unassigned
                           </UnstyledButton>
                         </Table.Td>
-                        <Table.Td data-col="owner">—</Table.Td>
-                        <Table.Td data-col="team-member">—</Table.Td>
-                        <Table.Td />
-                        <MemberCells m={unassigned} />
+                        <Table.Td data-col="owner">
+                          <Text size="md" fw={700} c="dimmed" style={NUM_STYLE}>
+                            —
+                          </Text>
+                        </Table.Td>
+                        <Table.Td data-col="team-member">
+                          <Text size="md" fw={700} c="dimmed" style={NUM_STYLE}>
+                            —
+                          </Text>
+                        </Table.Td>
+                        <SprintMetricCells
+                          m={
+                            data.unassigned ?? {
+                              currentSprintCompleted: 0,
+                              currentSprintTotal: 0,
+                              sprintBacklog: 0,
+                              upcomingSprintsTotal: 0,
+                              completedTasksTotal: 0,
+                            }
+                          }
+                        />
                       </Table.Tr>
                       <Table.Tr>
-                        <Table.Td colSpan={9} p={0} style={{ borderBottom: "none" }}>
+                        <Table.Td colSpan={7} p={0} style={{ borderBottom: "none" }}>
                           <Collapse in={expanded === "unassigned"}>
                             <WorkList items={unassigned.items} projectNames={projectNames} />
                           </Collapse>

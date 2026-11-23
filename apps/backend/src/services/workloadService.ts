@@ -1,6 +1,6 @@
 import { and, asc, eq, ne } from "drizzle-orm";
 import { sql, type SQL } from "drizzle-orm";
-import type { WorkloadResponse, WorkloadRow } from "@myapp/shared";
+import { resolveStoredSprint, type WorkloadResponse, type WorkloadRow, type WorkloadSprintMetrics } from "@myapp/shared";
 import { db } from "../db/client";
 import { activities, subprojects } from "../db/schema";
 import { env } from "../env";
@@ -57,6 +57,36 @@ export async function getWorkload(
     items: m.items.slice(0, 300),
   }));
 
+  const computeSprintMetrics = (userId: string | null): WorkloadSprintMetrics => {
+    let currentSprintCompleted = 0;
+    let currentSprintTotal = 0;
+    let sprintBacklog = 0;
+    let upcomingSprintsTotal = 0;
+    let completedTasksTotal = 0;
+
+    for (const i of loaded.items) {
+      if (i.assigneeId !== userId) continue;
+      if (i.isCompleted) completedTasksTotal += 1;
+      const sprintEnd = resolveStoredSprint(i.sprintKey, i.dueDate)?.endDate ?? i.dueDate;
+      if (sprintEnd !== null && sprintEnd >= r.weekStart && sprintEnd <= r.weekEnd) {
+        currentSprintTotal += 1;
+        if (i.isCompleted) currentSprintCompleted += 1;
+      } else if (sprintEnd !== null && sprintEnd > r.weekEnd) {
+        upcomingSprintsTotal += 1;
+      } else if (!i.isCompleted) {
+        sprintBacklog += 1;
+      }
+    }
+
+    return {
+      currentSprintCompleted,
+      currentSprintTotal,
+      sprintBacklog,
+      upcomingSprintsTotal,
+      completedTasksTotal,
+    };
+  };
+
   const items: WorkloadRow[] = people.map((p) => ({
     userId: p.id,
     fullName: p.fullName,
@@ -69,9 +99,15 @@ export async function getWorkload(
         i.dueDate &&
         bucketFor({ dueDate: i.dueDate, status: "open", completedDate: null }, r) === "thisWeek",
     ).length,
+    ...computeSprintMetrics(p.id),
   }));
 
-  return { items, members, projectNames: Object.fromEntries(loaded.projectNames) };
+  return {
+    items,
+    members,
+    unassigned: computeSprintMetrics(null),
+    projectNames: Object.fromEntries(loaded.projectNames),
+  };
 }
 
 /** A person's open items grouped by subproject, for the expandable row. Nothing here scores output. */

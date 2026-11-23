@@ -75,6 +75,11 @@ const row = (userId: string, fullName: string, owned = 0, memberCount = 0) => ({
   ownedProjectsCount: owned,
   teamMemberProjectsCount: memberCount,
   dueThisWeek: 3,
+  currentSprintCompleted: 1,
+  currentSprintTotal: 3,
+  sprintBacklog: 0,
+  upcomingSprintsTotal: 2,
+  completedTasksTotal: 4,
 });
 // No active sprint anywhere; Klein has tagged OST, USM, Kano and RAID work, Clea has none, one item is unassigned.
 const DATA: WorkloadResponse = {
