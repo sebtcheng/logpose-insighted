@@ -414,6 +414,7 @@ export function StoryMapPage() {
   return (
     <>
       <PageHeader
+        variant="usm"
         title="User Story Mapping (USM)"
         subtitle="Pick a user, lay out their steps from start to finish, and list the features each step needs."
         actions={

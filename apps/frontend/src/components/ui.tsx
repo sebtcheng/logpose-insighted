@@ -102,22 +102,28 @@ export const toast = {
     notifications.show({ color: "sun", title, message, autoClose: 8000 }),
 };
 
-import { AnimeHero } from "./AnimeHero";
+import { AnimeHero, type HeaderVariant } from "./AnimeHero";
 
 export function PageHeader({
   title,
   actions,
   subtitle,
+  variant = "home",
+  tag,
 }: {
   title: string;
   subtitle?: ReactNode;
   actions?: ReactNode;
+  variant?: HeaderVariant;
+  tag?: string;
 }) {
   return (
-    <div style={{ marginBottom: 16, position: "relative", zIndex: 0 }}>
+    <div className="lp-hero-wrap">
       <AnimeHero
         title={title}
-        subtitle={typeof subtitle === "string" ? subtitle : undefined}
+        subtitle={subtitle}
+        variant={variant}
+        tag={tag}
         rightSlot={actions}
       />
     </div>

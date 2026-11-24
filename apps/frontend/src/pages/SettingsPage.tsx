@@ -57,7 +57,7 @@ export function SettingsPage() {
   }
   return (
     <>
-      <PageHeader title="Settings" />
+      <PageHeader variant="settings" title="Settings" />
       <Tabs
         value={params.get("tab") ?? "users"}
         onChange={(v) => {

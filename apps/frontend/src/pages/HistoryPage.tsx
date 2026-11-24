@@ -304,6 +304,7 @@ export function HistoryPage() {
   return (
     <>
       <PageHeader
+        variant="history"
         title="History"
         subtitle="Chronological sprint accomplishment and delivery metrics"
       />
@@ -334,29 +335,150 @@ export function HistoryPage() {
         {(data) => (
           <Stack gap="lg">
             <SimpleGrid cols={{ base: 2, sm: 4 }} spacing="md">
-              <Paper withBorder p="md" radius="md">
-                <Text size="xs" c="dimmed" fw={700} tt="uppercase">
-                  Completed Sprints
-                </Text>
-                <Title order={2}>{data.summary.totalCompletedSprints}</Title>
+              <Paper withBorder p="md" radius="md" style={{ borderColor: "#E3EAF2" }}>
+                <Group justify="space-between" align="center" mb={8}>
+                  <Text size="xs" fw={600} tt="uppercase" style={{ color: "#4F5A7A", letterSpacing: "0.06em" }}>
+                    Completed Sprints
+                  </Text>
+                  <span
+                    style={{
+                      width: 22,
+                      height: 22,
+                      borderRadius: 6,
+                      background: "rgba(245, 194, 66, 0.18)",
+                      color: "#B45309",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      fontSize: "0.75rem",
+                      fontWeight: 700,
+                    }}
+                  >
+                    ✓
+                  </span>
+                </Group>
+                <Title
+                  order={2}
+                  style={{
+                    fontFamily: "'Source Serif 4', Georgia, serif",
+                    fontSize: "2.25rem",
+                    lineHeight: 1.05,
+                    color: "#0B2D5E",
+                  }}
+                >
+                  {data.summary.totalCompletedSprints}
+                </Title>
               </Paper>
-              <Paper withBorder p="md" radius="md">
-                <Text size="xs" c="dimmed" fw={700} tt="uppercase">
-                  Overall Completion
-                </Text>
-                <Title order={2}>{data.summary.overallCompletionRate}%</Title>
+
+              <Paper withBorder p="md" radius="md" style={{ borderColor: "#E3EAF2" }}>
+                <Group justify="space-between" align="center" mb={8}>
+                  <Text size="xs" fw={600} tt="uppercase" style={{ color: "#4F5A7A", letterSpacing: "0.06em" }}>
+                    Overall Completion
+                  </Text>
+                </Group>
+                <Title
+                  order={2}
+                  style={{
+                    fontFamily: "'Source Serif 4', Georgia, serif",
+                    fontSize: "2.25rem",
+                    lineHeight: 1.05,
+                    color: "#0B2D5E",
+                  }}
+                >
+                  {data.summary.overallCompletionRate}%
+                </Title>
+                <div
+                  style={{
+                    height: 5,
+                    background: "#E3EAF2",
+                    borderRadius: 999,
+                    overflow: "hidden",
+                    marginTop: 12,
+                  }}
+                >
+                  <div
+                    style={{
+                      width: `${Math.min(100, Math.max(0, data.summary.overallCompletionRate))}%`,
+                      height: "100%",
+                      background: "#0B2D5E",
+                      borderRadius: 999,
+                    }}
+                  />
+                </div>
               </Paper>
-              <Paper withBorder p="md" radius="md">
-                <Text size="xs" c="dimmed" fw={700} tt="uppercase">
-                  Avg On-Time Rate
-                </Text>
-                <Title order={2}>{data.summary.avgOnTimeRate}%</Title>
+
+              <Paper withBorder p="md" radius="md" style={{ borderColor: "#E3EAF2" }}>
+                <Group justify="space-between" align="center" mb={8}>
+                  <Text size="xs" fw={600} tt="uppercase" style={{ color: "#4F5A7A", letterSpacing: "0.06em" }}>
+                    Avg On-Time Rate
+                  </Text>
+                </Group>
+                <Title
+                  order={2}
+                  style={{
+                    fontFamily: "'Source Serif 4', Georgia, serif",
+                    fontSize: "2.25rem",
+                    lineHeight: 1.05,
+                    color: "#14603F",
+                  }}
+                >
+                  {data.summary.avgOnTimeRate}%
+                </Title>
+                <div
+                  style={{
+                    height: 5,
+                    background: "#E3EAF2",
+                    borderRadius: 999,
+                    overflow: "hidden",
+                    marginTop: 12,
+                  }}
+                >
+                  <div
+                    style={{
+                      width: `${Math.min(100, Math.max(0, data.summary.avgOnTimeRate))}%`,
+                      height: "100%",
+                      background: "#1E9E6A",
+                      borderRadius: 999,
+                    }}
+                  />
+                </div>
               </Paper>
-              <Paper withBorder p="md" radius="md">
-                <Text size="xs" c="dimmed" fw={700} tt="uppercase">
-                  Avg Delayed Rate
-                </Text>
-                <Title order={2}>{data.summary.avgDelayedRate}%</Title>
+
+              <Paper withBorder p="md" radius="md" style={{ borderColor: "#E3EAF2" }}>
+                <Group justify="space-between" align="center" mb={8}>
+                  <Text size="xs" fw={600} tt="uppercase" style={{ color: "#4F5A7A", letterSpacing: "0.06em" }}>
+                    Avg Delayed Rate
+                  </Text>
+                </Group>
+                <Title
+                  order={2}
+                  style={{
+                    fontFamily: "'Source Serif 4', Georgia, serif",
+                    fontSize: "2.25rem",
+                    lineHeight: 1.05,
+                    color: "#B42318",
+                  }}
+                >
+                  {data.summary.avgDelayedRate}%
+                </Title>
+                <div
+                  style={{
+                    height: 5,
+                    background: "#E3EAF2",
+                    borderRadius: 999,
+                    overflow: "hidden",
+                    marginTop: 12,
+                  }}
+                >
+                  <div
+                    style={{
+                      width: `${Math.min(100, Math.max(0, data.summary.avgDelayedRate))}%`,
+                      height: "100%",
+                      background: "#E5484D",
+                      borderRadius: 999,
+                    }}
+                  />
+                </div>
               </Paper>
             </SimpleGrid>
 

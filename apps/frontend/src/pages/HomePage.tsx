@@ -1,4 +1,4 @@
-import { memo, useMemo } from "react";
+import { memo, useMemo, useState } from "react";
 import { Alert, Badge, Card, Group, Select, Stack, Switch, Text, Title } from "@mantine/core";
 import { useLocalStorage } from "@mantine/hooks";
 import { useSearchParams } from "react-router-dom";
@@ -12,6 +12,7 @@ import { WorkItemsView, WorkViewSwitch, type WorkView } from "../components/Work
 import { useHome, useProjects, useSubprojects, useUsers, useCurrentProject } from "../api/hooks";
 import { useAuth, useIsPm } from "../auth";
 import { ActivityRow } from "../components/ActivityRow";
+import { PaginationBar, paginateItems } from "../components/PaginationBar";
 import { PageHeader, QueryState, fmtDate } from "../components/ui";
 import { applyHomeFilters, parseHomeFilters } from "../lib/filters";
 
@@ -46,8 +47,10 @@ const Section = memo(function Section({
   view: WorkView;
   projectNames: Map<string, string>;
 }) {
+  const [modulePage, setModulePage] = useState(1);
   const isNextWeek = title === "Next Sprint";
   const risky = isNextWeek ? rows.filter((r) => r.atRisk) : [];
+  const pagedModules = paginateItems(moduleRows, modulePage);
   return (
     <Card withBorder padding={0} className={title === "Current Sprint" ? "lp-card-coral" : undefined}>
       <Group justify="space-between" p="md" style={{ borderBottom: "var(--outline)" }}>
@@ -70,7 +73,23 @@ const Section = memo(function Section({
           <Text className="lp-kicker" px="md" pt="sm">
             Other modules
           </Text>
-          <WorkItemsView items={moduleRows} view={view} projectNames={projectNames} checkable />
+          <div style={{ maxHeight: 420, overflowY: "auto" }}>
+            <WorkItemsView
+              items={pagedModules.items}
+              view={view}
+              projectNames={projectNames}
+              checkable
+            />
+          </div>
+          {pagedModules.total > 20 ? (
+            <div style={{ padding: "0 16px 12px" }}>
+              <PaginationBar
+                page={pagedModules.page}
+                total={pagedModules.total}
+                onPageChange={setModulePage}
+              />
+            </div>
+          ) : null}
         </div>
       ) : null}
       {rows.length === 0 && !extra && moduleRows.length === 0 ? (
@@ -95,40 +114,54 @@ const Section = memo(function Section({
   );
 });
 
-const NAVY = "#0B2F5E";
-const GOLD = "#F5C83B";
-const BLUE = "#1E4E9C";
-const GREEN = "#12794F";
-const RED = "#D93A3A";
-const MISTY = "#EAF3F1";
 const LABEL_FONT = "Inter, system-ui, sans-serif";
+
+export function getSprintProgressColor(percentage: number): {
+  hue: number;
+  color: string;
+  border: string;
+  background: string;
+} {
+  const safe = Number.isFinite(percentage) ? percentage : 0;
+  const clamped = Math.min(100, Math.max(0, safe));
+  const hue = Math.round((clamped / 100) * 120);
+  return {
+    hue,
+    color: `hsl(${hue}, 85%, 62%)`,
+    border: `1px solid hsla(${hue}, 85%, 58%, 0.48)`,
+    background: `hsla(${hue}, 85%, 52%, 0.14)`,
+  };
+}
 
 export const Header = memo(function Header({ data }: { data: HomeResponse }) {
   const { sprintSummary, activeSprint, carryOver } = data;
-  const pct = activeSprint ? sprintSummary.completionRate : 0;
+  const backlogCount = carryOver?.count ?? 0;
+  const combinedTotal = sprintSummary.total + backlogCount;
+  const rawCompletedPct =
+    activeSprint && combinedTotal > 0 ? (sprintSummary.completed / combinedTotal) * 100 : 0;
+  const pct = Math.min(100, Math.max(0, Math.round(rawCompletedPct * 10) / 10));
+  const rawBacklogPct =
+    activeSprint && combinedTotal > 0 && backlogCount > 0 ? (backlogCount / combinedTotal) * 100 : 0;
+  const backlogPct = Math.min(100 - pct, Math.max(0, Math.round(rawBacklogPct * 10) / 10));
+  const remaining = Math.max(0, sprintSummary.total - sprintSummary.completed);
+  const pctBadgeStyle = getSprintProgressColor(pct);
 
   // The donut shows open versus finished work; Delayed and On Time are schedule views over the same tasks.
   const donutSegments = [
-    { label: "Ongoing", value: sprintSummary.ongoing, color: BLUE },
-    { label: "Completed", value: sprintSummary.completed, color: GREEN },
+    { label: "Completed", value: sprintSummary.completed, color: "#34C98B" },
+    { label: "Ongoing", value: sprintSummary.ongoing, color: "#6EA8FF" },
   ];
   const donutTotal = donutSegments.reduce((acc, s) => acc + s.value, 0);
+  const completedSharePct =
+    donutTotal > 0 ? Math.round((sprintSummary.completed / donutTotal) * 1000) / 10 : 0;
+  const ongoingSharePct =
+    donutTotal > 0 ? Math.round((sprintSummary.ongoing / donutTotal) * 1000) / 10 : 0;
   const size = 148;
   const stroke = 18;
   const radius = (size - stroke) / 2;
   const circumference = 2 * Math.PI * radius;
   let offset = 0;
 
-  const rows = [
-    { key: "ongoing", label: "Ongoing", value: sprintSummary.ongoing, bg: "#E1E8F4", fg: BLUE },
-    {
-      key: "completed",
-      label: "Completed",
-      value: sprintSummary.completed,
-      bg: "#E1F1E9",
-      fg: GREEN,
-    },
-  ];
   const delayed = sprintSummary.delayed;
   const label: React.CSSProperties = {
     fontFamily: LABEL_FONT,
@@ -137,22 +170,13 @@ export const Header = memo(function Header({ data }: { data: HomeResponse }) {
     letterSpacing: "0.1em",
     textTransform: "uppercase",
   };
-  const tile: React.CSSProperties = {
-    borderRadius: 6,
-    padding: "8px 12px",
-    whiteSpace: "nowrap",
-    gap: 8,
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "space-between",
-  };
 
   return (
     <div
       data-testid="sprint-telemetry-card"
       style={{
         display: "grid",
-        gridTemplateColumns: "minmax(0, 55fr) minmax(0, 45fr)",
+        gridTemplateColumns: "minmax(0, 1fr) minmax(0, 1fr)",
         gap: 16,
         marginBottom: "var(--mantine-spacing-lg)",
         fontFamily: LABEL_FONT,
@@ -161,72 +185,153 @@ export const Header = memo(function Header({ data }: { data: HomeResponse }) {
       <div
         data-testid="sprint-hero-panel"
         style={{
-          background: NAVY,
+          background: "#0B2D5E",
           color: "#FFFFFF",
-          borderTop: `3px solid ${RED}`,
-          borderRadius: 8,
-          padding: "20px 24px",
+          borderTop: "3px solid #E5484D",
+          borderRadius: 10,
+          padding: "20px 24px 18px",
           display: "flex",
           flexDirection: "column",
-          gap: 16,
+          justifyContent: "space-between",
+          gap: 20,
         }}
       >
         <Group justify="space-between" align="flex-start" wrap="nowrap" gap="md">
-          <div>
-            <Text style={{ ...label, color: "#C9D6EA" }}>Current sprint</Text>
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            <Group gap={10} align="center" wrap="wrap">
+              <Text style={{ ...label, color: "#B9C8E0", fontSize: "0.75rem" }}>
+                Current sprint
+              </Text>
+              {activeSprint ? (
+                <Text
+                  data-testid="sprint-days-left"
+                  style={{
+                    fontSize: "0.75rem",
+                    fontWeight: 500,
+                    color: "#F5C242",
+                    background: "rgba(245, 194, 66, 0.14)",
+                    border: "1px solid rgba(245, 194, 66, 0.38)",
+                    borderRadius: 999,
+                    padding: "2px 10px",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  {activeSprint.daysLeft} day{activeSprint.daysLeft === 1 ? "" : "s"} left · Ends{" "}
+                  {fmtDate(activeSprint.endDate)}
+                </Text>
+              ) : null}
+            </Group>
             <Title
               order={2}
-              style={{ color: "#FFFFFF", fontSize: "2.25rem", fontWeight: 700, lineHeight: 1.1 }}
+              style={{
+                color: "#FFFFFF",
+                fontFamily: "'Source Serif 4', Georgia, serif",
+                fontSize: "3.5rem",
+                fontWeight: 700,
+                lineHeight: 1.05,
+                letterSpacing: "-0.02em",
+              }}
             >
               {activeSprint ? activeSprint.name : "No active sprint"}
             </Title>
           </div>
-          {activeSprint ? (
+
+          <div
+            style={{
+              background: "rgba(255, 255, 255, 0.06)",
+              border: "1px solid rgba(255, 255, 255, 0.14)",
+              borderRadius: 12,
+              padding: "14px 18px",
+              minWidth: 168,
+              display: "flex",
+              flexDirection: "column",
+              gap: 8,
+              flexShrink: 0,
+            }}
+          >
+            <Group justify="space-between" align="center" gap="xs">
+              <Text style={{ ...label, color: "#B9C8E0", fontSize: "0.75rem" }}>Complete</Text>
+              <span
+                aria-hidden="true"
+                style={{
+                  width: 16,
+                  height: 16,
+                  borderRadius: 999,
+                  border: `1.5px solid ${pctBadgeStyle.color}`,
+                  color: pctBadgeStyle.color,
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontSize: "0.625rem",
+                  fontWeight: 700,
+                  lineHeight: 1,
+                }}
+              >
+                ✓
+              </span>
+            </Group>
             <div
-              data-testid="sprint-days-left"
+              data-testid="sprint-progress-pct"
               style={{
-                background: GOLD,
-                color: NAVY,
-                borderRadius: 8,
-                padding: "8px 14px",
-                display: "flex",
-                alignItems: "center",
-                gap: 10,
+                color: pctBadgeStyle.color,
+                fontSize: "2.75rem",
+                fontWeight: 700,
+                fontVariantNumeric: "tabular-nums",
+                lineHeight: 1,
                 whiteSpace: "nowrap",
               }}
             >
-              <span style={{ fontSize: "2rem", fontWeight: 700, lineHeight: 1 }}>
-                {activeSprint.daysLeft}
-              </span>
-              <span style={{ display: "flex", flexDirection: "column", lineHeight: 1.2 }}>
-                <span style={{ fontSize: "0.8125rem", fontWeight: 700 }}>
-                  day{activeSprint.daysLeft === 1 ? "" : "s"} left
-                </span>
-                <span style={{ fontSize: "0.6875rem", fontWeight: 500 }}>
-                  Ends {fmtDate(activeSprint.endDate)}
-                </span>
-              </span>
+              {pct}%
             </div>
-          ) : null}
-        </Group>
-
-        <div>
-          <Text style={{ ...label, color: "#C9D6EA" }} mb={6}>
-            Current sprint progress
-          </Text>
-          <Group justify="space-between" align="baseline" mb={8}>
-            <Text size="sm" style={{ color: "#FFFFFF" }}>
+            <div
+              style={{
+                height: 4,
+                background: "#3A5885",
+                borderRadius: 999,
+                overflow: "hidden",
+              }}
+            >
+              <div
+                style={{
+                  width: `${pct}%`,
+                  height: "100%",
+                  background: "#F5C242",
+                  borderRadius: 999,
+                }}
+              />
+            </div>
+            <Text size="xs" style={{ color: "#B9C8E0", whiteSpace: "nowrap" }}>
               {activeSprint
-                ? `${sprintSummary.completed} of ${sprintSummary.total} tasks completed`
+                ? `${sprintSummary.completed} of ${combinedTotal} tasks done`
                 : "No active sprint"}
             </Text>
+          </div>
+        </Group>
+
+        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          <Text style={{ ...label, color: "#B9C8E0", fontSize: "0.75rem" }}>
+            Current sprint progress
+          </Text>
+          <Group justify="space-between" align="baseline">
             <Text
               fw={700}
-              data-testid="sprint-progress-pct"
-              style={{ color: "#FFFFFF", fontSize: "1.5rem", lineHeight: 1 }}
+              data-testid="sprint-progress-summary"
+              style={{ color: "#FFFFFF", fontSize: "1.125rem", lineHeight: 1.2 }}
             >
-              {pct}%
+              {activeSprint
+                ? `${sprintSummary.completed} of ${combinedTotal} tasks completed`
+                : "No active sprint"}
             </Text>
+            {activeSprint && backlogCount > 0 ? (
+              <Text
+                size="xs"
+                fw={600}
+                data-testid="sprint-progress-backlog-label"
+                style={{ color: "#FF9EA3", whiteSpace: "nowrap" }}
+              >
+                {backlogCount} {backlogCount === 1 ? "backlog" : "backlogs"}
+              </Text>
+            ) : null}
           </Group>
           <div
             role="progressbar"
@@ -236,73 +341,121 @@ export const Header = memo(function Header({ data }: { data: HomeResponse }) {
             aria-valuemax={100}
             style={{
               height: 10,
-              background: "rgba(255,255,255,0.16)",
-              borderRadius: 5,
+              background: "#3A5885",
+              borderRadius: 999,
               overflow: "hidden",
+              display: "flex",
+              alignItems: "stretch",
             }}
           >
             <div
+              data-testid="sprint-progress-completed-bar"
               style={{
                 width: `${pct}%`,
                 height: "100%",
-                background: GOLD,
-                borderRadius: 5,
+                background: "#F5C242",
                 transition: "width 160ms cubic-bezier(0.2, 0, 0, 1)",
               }}
             />
+            {backlogCount > 0 ? (
+              <div
+                data-testid="sprint-progress-backlog-bar"
+                style={{
+                  width: `${backlogPct}%`,
+                  height: "100%",
+                  marginLeft: "auto",
+                  background: "#E5484D",
+                  transition: "width 160ms cubic-bezier(0.2, 0, 0, 1)",
+                }}
+              />
+            ) : null}
           </div>
-        </div>
-
-        {carryOver ? (
-          <div
-            data-testid="sprint-backlog"
-            style={{
-              background: "rgba(245, 200, 59, 0.12)",
-              borderLeft: `4px solid ${GOLD}`,
-              color: "#FFFFFF",
-              borderRadius: 8,
-              padding: "10px 14px",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              gap: 12,
-            }}
-          >
-            <div>
-              <Text style={{ ...label, color: GOLD }}>Sprint Backlogs</Text>
-              <Text size="xs" style={{ color: "#C9D6EA" }}>
-                Open tasks carried over from previous sprints
+          <Group gap={18} mt={4}>
+            <Group gap={6} align="center">
+              <span
+                style={{
+                  width: 8,
+                  height: 8,
+                  borderRadius: 2,
+                  background: "#F5C242",
+                  display: "inline-block",
+                }}
+              />
+              <Text size="xs" style={{ color: "#B9C8E0" }}>
+                Completed <strong style={{ color: "#FFFFFF" }}>{sprintSummary.completed}</strong>
               </Text>
-            </div>
-            <Text style={{ color: "#FFFFFF", whiteSpace: "nowrap" }}>
-              <span style={{ fontSize: "1.5rem", fontWeight: 700, color: GOLD }}>
-                {carryOver.count}
-              </span>
-              <span style={{ fontSize: "0.8125rem" }}> task{carryOver.count === 1 ? "" : "s"}</span>
-            </Text>
-          </div>
-        ) : null}
+            </Group>
+            <Group gap={6} align="center">
+              <span
+                style={{
+                  width: 8,
+                  height: 8,
+                  borderRadius: 2,
+                  background: "#3A5885",
+                  display: "inline-block",
+                }}
+              />
+              <Text size="xs" style={{ color: "#B9C8E0" }}>
+                Remaining <strong style={{ color: "#FFFFFF" }}>{remaining}</strong>
+              </Text>
+            </Group>
+            <Group gap={6} align="center">
+              <span
+                style={{
+                  width: 8,
+                  height: 8,
+                  borderRadius: 2,
+                  background: "#E5484D",
+                  display: "inline-block",
+                }}
+              />
+              <Text size="xs" style={{ color: "#B9C8E0" }}>
+                Backlog <strong style={{ color: "#FFFFFF" }}>{backlogCount}</strong>
+              </Text>
+            </Group>
+          </Group>
+        </div>
       </div>
 
       <div
         data-testid="task-breakdown-panel"
         style={{
-          background: "#FFFFFF",
-          borderTop: `3px solid ${GOLD}`,
-          borderRadius: 8,
-          padding: "20px 24px",
-          display: "flex",
-          flexDirection: "column",
-          gap: 16,
+          background: "#0B2D5E",
+          borderTop: "3px solid #F5C242",
+          borderRadius: 10,
+          overflow: "hidden",
+          display: "grid",
+          gridTemplateColumns: "auto 1fr",
           boxShadow: "0 1px 3px rgba(15, 23, 42, 0.12)",
         }}
       >
-        <Text style={{ ...label, color: "#586679" }}>Task breakdown</Text>
-        <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
+        <div
+          style={{
+            background: "#071F45",
+            padding: "20px 24px",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: 16,
+          }}
+        >
+          <Text style={{ ...label, color: "#F5C242", alignSelf: "flex-start", fontSize: "0.75rem" }}>
+            Task breakdown
+          </Text>
           <div
-            data-testid="sprint-donut"
-            style={{ position: "relative", width: size, height: size, flexShrink: 0 }}
+            style={{
+              flex: 1,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              width: "100%",
+            }}
           >
+            <div
+              data-testid="sprint-donut"
+              style={{ position: "relative", width: size, height: size, flexShrink: 0 }}
+            >
             <svg
               width={size}
               height={size}
@@ -315,7 +468,7 @@ export const Header = memo(function Header({ data }: { data: HomeResponse }) {
                 cy={size / 2}
                 r={radius}
                 fill="none"
-                stroke={MISTY}
+                stroke="rgba(255, 255, 255, 0.1)"
                 strokeWidth={stroke}
               />
               {donutTotal > 0
@@ -352,70 +505,222 @@ export const Header = memo(function Header({ data }: { data: HomeResponse }) {
                 pointerEvents: "none",
               }}
             >
-              <Text fw={700} style={{ fontSize: "2rem", lineHeight: 1.1, color: NAVY }}>
+              <Text
+                fw={700}
+                style={{
+                  fontFamily: "'Source Serif 4', Georgia, serif",
+                  fontSize: "2.75rem",
+                  lineHeight: 1,
+                  color: "#FFFFFF",
+                }}
+              >
                 {donutTotal}
               </Text>
-              <Text style={{ fontSize: "0.6875rem", color: BLUE }}>Total Tasks</Text>
+              <Text style={{ ...label, fontSize: "0.625rem", color: "#B9C8E0", marginTop: 4 }}>
+                Total tasks
+              </Text>
+            </div>
+          </div>
+          </div>
+        </div>
+
+        <div
+          style={{
+            padding: "20px 24px",
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: "space-between",
+            gap: 14,
+            minWidth: 0,
+          }}
+        >
+          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+            <Group justify="space-between" align="center">
+              <Text style={{ ...label, color: "#B9C8E0", fontSize: "0.75rem" }}>
+                Completed {completedSharePct}%
+              </Text>
+              <Text style={{ ...label, color: "#B9C8E0", fontSize: "0.75rem" }}>
+                Ongoing {ongoingSharePct}%
+              </Text>
+            </Group>
+            <div
+              style={{
+                height: 10,
+                background: "rgba(255, 255, 255, 0.1)",
+                borderRadius: 999,
+                overflow: "hidden",
+                display: "flex",
+              }}
+            >
+              <div
+                style={{
+                  width: `${completedSharePct}%`,
+                  height: "100%",
+                  background: "#34C98B",
+                }}
+              />
+              <div
+                style={{
+                  width: `${ongoingSharePct}%`,
+                  height: "100%",
+                  background: "#6EA8FF",
+                }}
+              />
             </div>
           </div>
 
-          <Stack gap={8} style={{ flex: 1, minWidth: 0 }}>
-            {rows.map((row) => (
-              <div
-                key={row.key}
-                data-testid={`kpi-tile-${row.key}`}
-                style={{ ...tile, background: row.bg, color: row.fg }}
-              >
-                <Group gap={8} align="center">
-                  <span
-                    style={{
-                      width: 8,
-                      height: 8,
-                      borderRadius: "50%",
-                      background: row.fg,
-                      display: "inline-block",
-                    }}
-                  />
-                  <Text size="xs" fw={600} style={{ color: row.fg }}>
-                    {row.label}
-                  </Text>
-                </Group>
-                <Text size="sm" fw={700} style={{ color: row.fg }}>
-                  {row.value}
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+              gap: 12,
+            }}
+          >
+            <div
+              data-testid="kpi-tile-completed"
+              style={{
+                background: "rgba(52, 201, 139, 0.12)",
+                border: "1px solid rgba(52, 201, 139, 0.35)",
+                borderRadius: 10,
+                padding: "12px 16px",
+                display: "flex",
+                flexDirection: "column",
+                gap: 6,
+              }}
+            >
+              <Group gap={6} align="center">
+                <span
+                  style={{
+                    width: 8,
+                    height: 8,
+                    borderRadius: 2,
+                    background: "#34C98B",
+                    display: "inline-block",
+                  }}
+                />
+                <Text size="sm" fw={600} style={{ color: "#34C98B" }}>
+                  Completed
                 </Text>
-              </div>
-            ))}
-            <div style={{ display: "flex", gap: 8 }}>
-              <div
-                data-testid="kpi-tile-delayed"
+              </Group>
+              <Text
+                fw={800}
                 style={{
-                  ...tile,
-                  flex: 1,
-                  background: "#FBE6E9",
-                  color: RED,
-                  border: `1px solid ${RED}`,
+                  color: "#FFFFFF",
+                  fontSize: "2.25rem",
+                  lineHeight: 1,
+                  fontVariantNumeric: "tabular-nums",
                 }}
               >
-                <Text size="xs" fw={600} style={{ color: "inherit" }}>
+                {sprintSummary.completed}
+              </Text>
+            </div>
+
+            <div
+              data-testid="kpi-tile-ongoing"
+              style={{
+                background: "rgba(110, 168, 255, 0.12)",
+                border: "1px solid rgba(110, 168, 255, 0.35)",
+                borderRadius: 10,
+                padding: "12px 16px",
+                display: "flex",
+                flexDirection: "column",
+                gap: 6,
+              }}
+            >
+              <Group gap={6} align="center">
+                <span
+                  style={{
+                    width: 8,
+                    height: 8,
+                    borderRadius: 2,
+                    background: "#6EA8FF",
+                    display: "inline-block",
+                  }}
+                />
+                <Text size="sm" fw={600} style={{ color: "#B9C8E0" }}>
+                  Ongoing
+                </Text>
+              </Group>
+              <Text
+                fw={800}
+                style={{
+                  color: "#FFFFFF",
+                  fontSize: "2.25rem",
+                  lineHeight: 1,
+                  fontVariantNumeric: "tabular-nums",
+                }}
+              >
+                {sprintSummary.ongoing}
+              </Text>
+            </div>
+
+            <div
+              data-testid="kpi-tile-delayed"
+              style={{
+                background: "rgba(255, 158, 163, 0.08)",
+                border: "1px solid rgba(255, 158, 163, 0.3)",
+                borderRadius: 10,
+                padding: "12px 16px",
+                display: "flex",
+                flexDirection: "column",
+                gap: 6,
+              }}
+            >
+              <Group gap={6} align="center">
+                <span
+                  style={{
+                    width: 8,
+                    height: 8,
+                    borderRadius: 2,
+                    background: "#FF9EA3",
+                    display: "inline-block",
+                  }}
+                />
+                <Text size="sm" fw={600} style={{ color: "#FF9EA3" }}>
                   Delayed
                 </Text>
-                <Text size="sm" fw={700} style={{ color: "inherit" }}>
-                  {delayed}
-                </Text>
-              </div>
-              <div
-                data-testid="kpi-tile-on-time"
-                style={{ ...tile, flex: 1, background: GREEN, color: "#FFFFFF" }}
+              </Group>
+              <Text
+                fw={800}
+                style={{
+                  color: "#FF9EA3",
+                  fontSize: "2.25rem",
+                  lineHeight: 1,
+                  fontVariantNumeric: "tabular-nums",
+                }}
               >
-                <Text size="xs" fw={600} style={{ color: "inherit" }}>
-                  On Time
-                </Text>
-                <Text size="sm" fw={700} style={{ color: "inherit" }}>
-                  {sprintSummary.onTime}
-                </Text>
-              </div>
+                {delayed}
+              </Text>
             </div>
-          </Stack>
+
+            <div
+              data-testid="kpi-tile-on-time"
+              style={{
+                background: "#34C98B",
+                borderRadius: 10,
+                padding: "12px 16px",
+                display: "flex",
+                flexDirection: "column",
+                gap: 6,
+                color: "#06231A",
+              }}
+            >
+              <Text size="sm" fw={700} style={{ color: "#06231A" }}>
+                ✓ On time
+              </Text>
+              <Text
+                fw={800}
+                style={{
+                  color: "#06231A",
+                  fontSize: "2.25rem",
+                  lineHeight: 1,
+                  fontVariantNumeric: "tabular-nums",
+                }}
+              >
+                {sprintSummary.onTime}
+              </Text>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -472,6 +777,7 @@ export function HomePage() {
   return (
     <>
       <PageHeader
+        variant="home"
         title="Home"
         subtitle={isPm ? "Everyone's work, by when it is due" : "Your work, by when it is due"}
       />

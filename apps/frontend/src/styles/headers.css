@@ -1,0 +1,477 @@
+/* LogPose per-page header banners (docs/LogPose Header Art.pdf) */
+
+.lp-hero-wrap {
+  margin-bottom: 16px;
+  position: relative;
+  z-index: 0;
+}
+
+.lp-hero {
+  position: relative;
+  min-height: 184px;
+  margin: -16px -16px 0 -16px;
+  padding: 20px 32px 22px;
+  overflow: hidden;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.lp-hero__art {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  display: block;
+}
+
+.lp-hero__scrim {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.lp-hero__content {
+  position: relative;
+  z-index: 1;
+  max-width: min(680px, 64%);
+}
+
+.lp-hero__tag {
+  display: inline-block;
+  padding: 4px 12px;
+  margin-bottom: 8px;
+  font-family: "JetBrains Mono", var(--font-mono);
+  font-weight: 700;
+  font-size: 11px;
+  line-height: 1.2;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.lp-hero__title {
+  margin: 0;
+  line-height: 1.08;
+  text-wrap: balance;
+}
+
+.lp-hero__subtitle {
+  margin: 6px 0 0;
+  font-family: "Inter", var(--font-body);
+  font-size: 15px;
+  font-weight: 400;
+  line-height: 1.4;
+  max-width: 58ch;
+}
+
+.lp-hero__actions {
+  position: relative;
+  z-index: 2;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* 1. HOME — Mountain Basecamp */
+.lp-hero[data-variant="home"] {
+  background: linear-gradient(
+    180deg,
+    #0d1e34 0%,
+    #12263f 44%,
+    #3b4961 72%,
+    #8f6f62 90%,
+    #b4896e 100%
+  );
+  border-bottom: 2px solid #0b192c;
+  color: #ffffff;
+}
+.lp-hero[data-variant="home"] .lp-hero__scrim {
+  background: linear-gradient(
+    90deg,
+    rgba(13, 30, 52, 0.72) 0%,
+    rgba(18, 38, 63, 0.34) 42%,
+    rgba(18, 38, 63, 0) 68%
+  );
+}
+.lp-hero[data-variant="home"] .lp-hero__tag {
+  background: #ffd166;
+  color: #12263f;
+  border-radius: 9999px;
+}
+.lp-hero[data-variant="home"] .lp-hero__title {
+  font-family: "Oswald", var(--font-display);
+  font-weight: 700;
+  font-size: clamp(2.25rem, 3.2vw, 3.4rem);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #ffffff;
+  text-shadow: 0 2px 12px rgba(10, 22, 38, 0.55);
+}
+.lp-hero[data-variant="home"] .lp-hero__subtitle {
+  color: #f1f7ff;
+  text-shadow: 0 1px 4px rgba(10, 22, 38, 0.72);
+}
+
+/* 2. USM — Meadow Journey */
+.lp-hero[data-variant="usm"] {
+  background: linear-gradient(180deg, #bfe6ff 0%, #dcf1ff 48%, #fff7dc 100%);
+  border-bottom: 2px solid #2f8f5b;
+  color: #133d29;
+}
+.lp-hero[data-variant="usm"] .lp-hero__scrim {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 247, 220, 0.84) 0%,
+    rgba(255, 247, 220, 0.48) 44%,
+    rgba(255, 247, 220, 0) 68%
+  );
+}
+.lp-hero[data-variant="usm"] .lp-hero__tag {
+  background: #2f8f5b;
+  color: #ffffff;
+  border-radius: 9999px;
+}
+.lp-hero[data-variant="usm"] .lp-hero__title {
+  font-family: "Fredoka", var(--font-display);
+  font-weight: 600;
+  font-size: clamp(1.9rem, 2.75vw, 2.75rem);
+  letter-spacing: -0.01em;
+  color: #133d29;
+  text-shadow:
+    2px 2px 0 #ffffff,
+    -1px -1px 0 rgba(255, 255, 255, 0.85);
+}
+.lp-hero[data-variant="usm"] .lp-hero__subtitle {
+  font-weight: 500;
+  color: #163c2b;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.8);
+}
+
+/* 3. HISTORY — Clockwork Time */
+.lp-hero[data-variant="history"] {
+  background: linear-gradient(110deg, #0f0b2e 0%, #1f124c 52%, #2a1860 100%);
+  border-bottom: 2px solid #0b0822;
+  color: #fff3d6;
+}
+.lp-hero[data-variant="history"] .lp-hero__scrim {
+  background: linear-gradient(
+    90deg,
+    rgba(15, 11, 46, 0.8) 0%,
+    rgba(15, 11, 46, 0.42) 42%,
+    rgba(15, 11, 46, 0) 66%
+  );
+}
+.lp-hero[data-variant="history"] .lp-hero__tag {
+  background: #f5c451;
+  color: #0f0b2e;
+  border-radius: 9999px;
+}
+.lp-hero[data-variant="history"] .lp-hero__title {
+  font-family: "Cinzel", var(--font-serif);
+  font-weight: 700;
+  font-size: clamp(2.1rem, 3vw, 3.15rem);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #fff3d6;
+  text-shadow:
+    0 0 18px rgba(245, 196, 81, 0.45),
+    0 2px 6px rgba(15, 11, 46, 0.8);
+}
+.lp-hero[data-variant="history"] .lp-hero__subtitle {
+  color: #e2dcff;
+  text-shadow: 0 1px 3px rgba(15, 11, 46, 0.8);
+}
+.lp-hero[data-variant="history"] .lp-hero__subtitle a {
+  color: #7de8ff;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+/* 4. OST — World Tree */
+.lp-hero[data-variant="ost"] {
+  background: linear-gradient(115deg, #031a17 0%, #072b25 55%, #0a3b33 100%);
+  border-bottom: 2px solid #021210;
+  color: #e8ffe9;
+}
+.lp-hero[data-variant="ost"] .lp-hero__scrim {
+  background: linear-gradient(
+    90deg,
+    rgba(3, 26, 23, 0.8) 0%,
+    rgba(3, 26, 23, 0.42) 48%,
+    rgba(3, 26, 23, 0) 70%
+  );
+}
+.lp-hero[data-variant="ost"] .lp-hero__tag {
+  background: #b6f36b;
+  color: #031a17;
+  border-radius: 9999px;
+}
+.lp-hero[data-variant="ost"] .lp-hero__title {
+  font-family: "Fraunces", var(--font-serif);
+  font-weight: 700;
+  font-size: clamp(1.85rem, 2.7vw, 2.75rem);
+  letter-spacing: -0.015em;
+  color: #e8ffe9;
+  text-shadow:
+    0 0 18px rgba(182, 243, 107, 0.42),
+    0 2px 6px rgba(3, 26, 23, 0.85);
+}
+.lp-hero[data-variant="ost"] .lp-hero__subtitle {
+  color: #cbead8;
+  text-shadow: 0 1px 3px rgba(3, 26, 23, 0.8);
+}
+
+/* 5. WORKLOAD — Daylight Dock */
+.lp-hero[data-variant="workload"] {
+  background: #0b1b3a;
+  border-bottom: 2px solid #061024;
+  color: #ffffff;
+}
+.lp-hero[data-variant="workload"] .lp-hero__scrim {
+  background: linear-gradient(
+    90deg,
+    rgba(11, 27, 58, 0.9) 0%,
+    rgba(11, 27, 58, 0.58) 38%,
+    rgba(11, 27, 58, 0) 56%
+  );
+}
+.lp-hero[data-variant="workload"] .lp-hero__tag {
+  background: #ff7a45;
+  color: #0b1b3a;
+  border-radius: 6px;
+}
+.lp-hero[data-variant="workload"] .lp-hero__title {
+  font-family: "Rubik", var(--font-display);
+  font-weight: 900;
+  font-size: clamp(2.15rem, 3.1vw, 3.2rem);
+  letter-spacing: -0.01em;
+  color: #ffffff;
+  text-shadow: 3px 3px 0 #ff7a45;
+}
+.lp-hero[data-variant="workload"] .lp-hero__subtitle {
+  color: #e2eeff;
+}
+
+/* 6. RAID LOG — Threat Radar */
+.lp-hero[data-variant="raid"] {
+  background: #0a0f1c;
+  border-bottom: 2px solid #16203a;
+  color: #ffffff;
+}
+.lp-hero[data-variant="raid"] .lp-hero__scrim {
+  background: linear-gradient(
+    90deg,
+    rgba(10, 15, 28, 0.84) 0%,
+    rgba(10, 15, 28, 0.45) 48%,
+    rgba(10, 15, 28, 0) 70%
+  );
+}
+.lp-hero[data-variant="raid"] .lp-hero__tag {
+  background: #ff4d5e;
+  color: #0a0f1c;
+  border-radius: 4px;
+}
+.lp-hero[data-variant="raid"] .lp-hero__title {
+  font-family: "Rajdhani", var(--font-display);
+  font-weight: 700;
+  font-size: clamp(2.25rem, 3.3vw, 3.5rem);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #ffffff;
+  text-shadow:
+    0 0 18px rgba(255, 77, 94, 0.6),
+    0 0 4px rgba(255, 77, 94, 0.45);
+}
+.lp-hero[data-variant="raid"] .lp-hero__subtitle {
+  color: #c7d2ea;
+}
+
+/* 7. PROJECTS — Guild Quest Board */
+.lp-hero[data-variant="projects"] {
+  background: #12383f;
+  border-bottom: 2px solid #0a2328;
+  color: #f5e6c8;
+}
+.lp-hero[data-variant="projects"] .lp-hero__scrim {
+  background: linear-gradient(
+    90deg,
+    rgba(18, 56, 63, 0.8) 0%,
+    rgba(18, 56, 63, 0.42) 34%,
+    rgba(18, 56, 63, 0) 54%
+  );
+}
+.lp-hero[data-variant="projects"] .lp-hero__tag {
+  background: #f2b632;
+  color: #12383f;
+  border-radius: 6px;
+}
+.lp-hero[data-variant="projects"] .lp-hero__title {
+  font-family: "Alfa Slab One", var(--font-serif);
+  font-weight: 400;
+  font-size: clamp(2.1rem, 3vw, 3.1rem);
+  letter-spacing: 0.01em;
+  color: #f5e6c8;
+  text-shadow: 3px 3px 0 #4a2a16;
+}
+.lp-hero[data-variant="projects"] .lp-hero__subtitle {
+  color: #e8dcc4;
+  text-shadow: 0 1px 3px rgba(10, 35, 40, 0.85);
+}
+
+/* 8. KANO — Pop Chart */
+.lp-hero[data-variant="kano"] {
+  background: #ffd93d;
+  border-bottom: 2px solid #1b1030;
+  color: #1b1030;
+}
+.lp-hero[data-variant="kano"] .lp-hero__scrim {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 217, 61, 0.94) 0%,
+    rgba(255, 217, 61, 0.72) 44%,
+    rgba(255, 217, 61, 0) 64%
+  );
+}
+.lp-hero[data-variant="kano"] .lp-hero__tag {
+  background: #1b1030;
+  color: #ffd93d;
+  border-radius: 4px;
+}
+.lp-hero[data-variant="kano"] .lp-hero__title {
+  font-family: "Barlow Condensed", var(--font-display);
+  font-weight: 900;
+  font-style: italic;
+  font-size: clamp(2.2rem, 3.3vw, 3.45rem);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  color: #1b1030;
+  text-shadow: 3px 3px 0 #ff4fa3;
+}
+.lp-hero[data-variant="kano"] .lp-hero__subtitle {
+  font-weight: 500;
+  color: #1b1030;
+}
+
+/* 9. SETTINGS — Blueprint */
+.lp-hero[data-variant="settings"] {
+  background: linear-gradient(120deg, #1e4fa3 0%, #174492 55%, #143c82 100%);
+  border-bottom: 2px solid #0a1e50;
+  color: #ffffff;
+}
+.lp-hero[data-variant="settings"] .lp-hero__scrim {
+  background: linear-gradient(
+    90deg,
+    rgba(20, 60, 130, 0.68) 0%,
+    rgba(20, 60, 130, 0.3) 40%,
+    rgba(20, 60, 130, 0) 62%
+  );
+}
+.lp-hero[data-variant="settings"] .lp-hero__tag {
+  background: #ffffff;
+  color: #0a1e50;
+  border-radius: 4px;
+}
+.lp-hero[data-variant="settings"] .lp-hero__title {
+  font-family: "Sora", var(--font-display);
+  font-weight: 700;
+  font-size: clamp(2.1rem, 3.1vw, 3.15rem);
+  letter-spacing: -0.02em;
+  color: #ffffff;
+  text-shadow: 0 2px 6px rgba(10, 30, 80, 0.5);
+}
+.lp-hero[data-variant="settings"] .lp-hero__subtitle {
+  color: #dcebff;
+}
+
+/* 10. ADMIN LOG — Approval Desk */
+.lp-hero[data-variant="adminLog"] {
+  background: linear-gradient(135deg, #f7efdb 0%, #f1e3c2 55%, #e8d7b0 100%);
+  border-bottom: 2px solid #5b3d24;
+  color: #1d2b53;
+}
+.lp-hero[data-variant="adminLog"] .lp-hero__scrim {
+  background: linear-gradient(
+    90deg,
+    rgba(247, 239, 219, 0.9) 0%,
+    rgba(247, 239, 219, 0.58) 48%,
+    rgba(247, 239, 219, 0) 66%
+  );
+}
+.lp-hero[data-variant="adminLog"] .lp-hero__tag {
+  background: #d8263e;
+  color: #fbf3df;
+  border-radius: 4px;
+}
+.lp-hero[data-variant="adminLog"] .lp-hero__title {
+  font-family: "Playfair Display", var(--font-serif);
+  font-weight: 700;
+  font-size: clamp(2.15rem, 3.1vw, 3.2rem);
+  letter-spacing: -0.01em;
+  color: #1d2b53;
+  text-shadow: 2px 2px 0 rgba(216, 38, 62, 0.22);
+}
+.lp-hero[data-variant="adminLog"] .lp-hero__subtitle {
+  font-weight: 500;
+  color: #1d2b53;
+}
+
+/* Purposeful subtle ambient animations inside scenes */
+@keyframes lp-radar-sweep {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.lp-hero-radar-sweep {
+  transform-origin: 1130px 120px;
+  animation: lp-radar-sweep 9s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lp-hero-radar-sweep {
+    animation: none;
+  }
+}
+
+/* Responsive narrow screens */
+@media (max-width: 768px) {
+  .lp-hero {
+    min-height: 164px;
+    padding: 18px 20px 20px;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: flex-end;
+  }
+  .lp-hero__content {
+    max-width: 100%;
+  }
+  .lp-hero[data-variant="home"] .lp-hero__scrim,
+  .lp-hero[data-variant="history"] .lp-hero__scrim,
+  .lp-hero[data-variant="ost"] .lp-hero__scrim,
+  .lp-hero[data-variant="workload"] .lp-hero__scrim,
+  .lp-hero[data-variant="raid"] .lp-hero__scrim,
+  .lp-hero[data-variant="projects"] .lp-hero__scrim,
+  .lp-hero[data-variant="settings"] .lp-hero__scrim {
+    background: linear-gradient(
+      90deg,
+      rgba(10, 15, 28, 0.88) 0%,
+      rgba(10, 15, 28, 0.72) 65%,
+      rgba(10, 15, 28, 0.35) 100%
+    );
+  }
+  .lp-hero[data-variant="usm"] .lp-hero__scrim {
+    background: rgba(255, 247, 220, 0.8);
+  }
+  .lp-hero[data-variant="kano"] .lp-hero__scrim {
+    background: rgba(255, 217, 61, 0.86);
+  }
+  .lp-hero[data-variant="adminLog"] .lp-hero__scrim {
+    background: rgba(247, 239, 219, 0.86);
+  }
+}

@@ -217,7 +217,8 @@ function ProjectSection({
   return (
     <section aria-label={group.projectName} data-testid="admin-log-project">
       <div id={panelId} role="region" aria-label={`${group.projectName} tasks`}>
-        <Table.ScrollContainer minWidth={860}>
+        <div style={{ maxHeight: 520, overflowY: "auto" }}>
+          <Table.ScrollContainer minWidth={860}>
         <Table verticalSpacing={4} fz="sm">
           <Table.Thead>
             <Table.Tr>
@@ -405,6 +406,7 @@ function ProjectSection({
           </Table.Tbody>
         </Table>
         </Table.ScrollContainer>
+        </div>
       </div>
     </section>
   );
@@ -499,6 +501,7 @@ export function AdminLogPage() {
   return (
     <>
       <PageHeader
+        variant="adminLog"
         title="Admin Log"
         subtitle="Every task across all projects. Tasks can only be completed once you approve them."
         actions={

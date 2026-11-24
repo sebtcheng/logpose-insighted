@@ -426,7 +426,11 @@ export function ProjectsPage() {
 
   return (
     <>
-      <PageHeader title="Projects" actions={<Button onClick={open}>New project</Button>} />
+      <PageHeader
+        variant="projects"
+        title="Projects"
+        actions={<Button onClick={open}>New project</Button>}
+      />
       <QueryState query={tree} isEmpty={(d) => d.length === 0} empty="No projects yet.">
         {(items) => (
           <ProjectsTableWrap

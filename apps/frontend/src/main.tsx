@@ -3,6 +3,7 @@ import "@mantine/core/styles.css";
 import "@mantine/notifications/styles.css";
 import "./styles/tokens.css";
 import "./styles/shell.css";
+import "./styles/headers.css";
 import "./styles/login.css";
 import "./styles/raid.css";
 import "./styles/view-toggle.css";
