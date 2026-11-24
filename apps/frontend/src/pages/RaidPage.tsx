@@ -320,13 +320,19 @@ export function MitigationSummary({
     <UnstyledButton
       type="button"
       className="raid-mitigation-summary"
+      style={{ flexShrink: 0 }}
       aria-label={`Mitigation ${mitigationPercent(item.mitigatingActions)} percent, ${done} of ${total} actions done. Open ${item.code}`}
       onClick={(e) => {
         e.stopPropagation();
         onOpen(item);
       }}
     >
-      <Badge size="lg" variant="light" className="raid-mono">
+      <Badge
+        size="lg"
+        variant="light"
+        className="raid-mono"
+        style={{ overflow: "visible", flexShrink: 0 }}
+      >
         {mitigationPercent(item.mitigatingActions)}%
       </Badge>
     </UnstyledButton>

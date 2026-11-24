@@ -4,13 +4,15 @@ import {
   Badge,
   Button,
   Checkbox,
+  Combobox,
   Group,
+  InputBase,
   Select,
   Stack,
   Table,
   Text,
   TextInput,
-  UnstyledButton,
+  useCombobox,
 } from "@mantine/core";
 import { ColumnHeader, compareNullable } from "../components/ColumnHeader";
 import {
@@ -193,8 +195,6 @@ function EditItemModal({ item, onClose }: { item: WorkItem; onClose: () => void 
 
 function ProjectSection({
   group,
-  isOpen,
-  onToggle,
   onEdit,
   sort,
   onSort,
@@ -203,8 +203,6 @@ function ProjectSection({
   options,
 }: {
   group: AdminLogProjectGroup;
-  isOpen: boolean;
-  onToggle: () => void;
   onEdit: (item: WorkItem) => void;
   sort: SortConfig;
   onSort: (key: SortKey) => void;
@@ -218,34 +216,8 @@ function ProjectSection({
   const panelId = `admin-log-panel-${group.projectId}`;
   return (
     <section aria-label={group.projectName} data-testid="admin-log-project">
-      <UnstyledButton
-        type="button"
-        aria-expanded={isOpen}
-        aria-controls={panelId}
-        onClick={onToggle}
-        mb="xs"
-        style={{ width: "100%", display: "flex", alignItems: "center", gap: 8 }}
-      >
-        <Text span fw={700} fz="sm" c="dimmed" aria-hidden="true">
-          {isOpen ? "▾" : "▸"}
-        </Text>
-        <Group gap="sm">
-          <Text fw={700} fz="lg" component="h2" m={0}>
-            {group.projectName}
-          </Text>
-          <Badge variant="outline" color="navy">
-            {group.total} {group.total === 1 ? "task" : "tasks"}
-          </Badge>
-          {group.pending > 0 ? (
-            <Badge variant="light" color="navy">
-              {group.pending} pending
-            </Badge>
-          ) : null}
-        </Group>
-      </UnstyledButton>
-      {isOpen ? (
-        <div id={panelId} role="region" aria-label={`${group.projectName} tasks`}>
-          <Table.ScrollContainer minWidth={860}>
+      <div id={panelId} role="region" aria-label={`${group.projectName} tasks`}>
+        <Table.ScrollContainer minWidth={860}>
         <Table verticalSpacing={4} fz="sm">
           <Table.Thead>
             <Table.Tr>
@@ -432,9 +404,8 @@ function ProjectSection({
             })}
           </Table.Tbody>
         </Table>
-          </Table.ScrollContainer>
-        </div>
-      ) : null}
+        </Table.ScrollContainer>
+      </div>
     </section>
   );
 }
@@ -443,7 +414,10 @@ export function AdminLogPage() {
   const isPm = useIsPm();
   const log = useAdminLog();
   const [editing, setEditing] = useState<WorkItem | null>(null);
-  const [expandedProjectId, setExpandedProjectId] = useState<string | null | undefined>(undefined);
+  const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
+  const combobox = useCombobox({
+    onDropdownClose: () => combobox.resetSelectedOption(),
+  });
   const [sort, setSort] = useState<SortConfig>({ key: null, direction: "asc" });
   const [filters, setFilters] = useState<ColumnFilters>(EMPTY_FILTERS);
 
@@ -545,31 +519,98 @@ export function AdminLogPage() {
         empty={<Text c="dimmed">No tasks yet.</Text>}
       >
         {() => {
-          const activeProjectId =
-            expandedProjectId === undefined
-              ? (filteredProjects[0]?.projectId ?? null)
-              : filteredProjects.some((g) => g.projectId === expandedProjectId)
-                ? expandedProjectId
-                : null;
+          const activeProject =
+            filteredProjects.find((g) => g.projectId === selectedProjectId) ??
+            filteredProjects[0] ??
+            null;
           return (
             <Stack gap="md">
-              {filteredProjects.map((g) => {
-                const isOpen = g.projectId === activeProjectId;
-                return (
-                  <ProjectSection
-                    key={g.projectId}
-                    group={g}
-                    isOpen={isOpen}
-                    onToggle={() => setExpandedProjectId(isOpen ? null : g.projectId)}
-                    onEdit={setEditing}
-                    sort={sort}
-                    onSort={toggleSort}
-                    filters={filters}
-                    onFiltersChange={setFilters}
-                    options={options}
-                  />
-                );
-              })}
+              {activeProject ? (
+                <Combobox
+                  store={combobox}
+                  onOptionSubmit={(val) => {
+                    setSelectedProjectId(val);
+                    combobox.closeDropdown();
+                  }}
+                >
+                  <Combobox.Target>
+                    <InputBase
+                      component="button"
+                      type="button"
+                      pointer
+                      rightSection={<Combobox.Chevron />}
+                      rightSectionPointerEvents="none"
+                      aria-label="Select project"
+                      data-testid="admin-log-project-select"
+                      onClick={() => combobox.toggleDropdown()}
+                      maw={440}
+                    >
+                      <Group gap="xs" wrap="nowrap">
+                        <Text fw={600} fz="sm" truncate>
+                          {activeProject.projectName}
+                        </Text>
+                        <Badge variant="outline" color="navy" size="sm">
+                          {activeProject.total} {activeProject.total === 1 ? "task" : "tasks"}
+                        </Badge>
+                        {activeProject.pending > 0 ? (
+                          <Badge
+                            variant="filled"
+                            color="red"
+                            size="sm"
+                            data-testid="pending-approval-badge"
+                          >
+                            {activeProject.pending} pending
+                          </Badge>
+                        ) : null}
+                      </Group>
+                    </InputBase>
+                  </Combobox.Target>
+                  <Combobox.Dropdown>
+                    <Combobox.Options>
+                      {filteredProjects.map((g) => (
+                        <Combobox.Option
+                          key={g.projectId}
+                          value={g.projectId}
+                          active={g.projectId === activeProject.projectId}
+                        >
+                          <Group justify="space-between" gap="xs" wrap="nowrap">
+                            <Group gap="xs" wrap="nowrap">
+                              <Text fw={600} fz="sm">
+                                {g.projectName}
+                              </Text>
+                              <Badge variant="outline" color="navy" size="sm">
+                                {g.total} {g.total === 1 ? "task" : "tasks"}
+                              </Badge>
+                            </Group>
+                            {g.pending > 0 ? (
+                              <Badge
+                                variant="filled"
+                                color="red"
+                                size="sm"
+                                data-testid="pending-approval-badge"
+                              >
+                                {g.pending} pending
+                              </Badge>
+                            ) : null}
+                          </Group>
+                        </Combobox.Option>
+                      ))}
+                    </Combobox.Options>
+                  </Combobox.Dropdown>
+                </Combobox>
+              ) : null}
+              {activeProject ? (
+                <ProjectSection
+                  key={activeProject.projectId}
+                  group={activeProject}
+                  onEdit={setEditing}
+                  sort={sort}
+                  onSort={toggleSort}
+                  filters={filters}
+                  onFiltersChange={setFilters}
+                  options={options}
+                />
+              ) : null}
             </Stack>
           );
         }}
