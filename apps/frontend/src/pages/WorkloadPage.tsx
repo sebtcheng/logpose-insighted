@@ -40,17 +40,17 @@ function SprintMetricCells({ m }: { m: WorkloadSprintMetrics }) {
           <Progress value={pct} size="sm" radius="sm" aria-label="Current sprint progress" />
         </Stack>
       </Table.Td>
-      <Table.Td>
+      <Table.Td ta="center">
         <Text size="md" fw={700} c="red.7" style={NUM_STYLE}>
           {m.sprintBacklog}
         </Text>
       </Table.Td>
-      <Table.Td>
+      <Table.Td ta="center">
         <Text size="md" fw={700} style={NUM_STYLE}>
           {m.upcomingSprintsTotal}
         </Text>
       </Table.Td>
-      <Table.Td>
+      <Table.Td ta="center">
         <Text size="md" fw={700} style={NUM_STYLE}>
           {m.completedTasksTotal}
         </Text>
@@ -220,6 +220,7 @@ export function WorkloadPage() {
                             colKey={col.key}
                             sort={sort}
                             onSort={handleSort}
+                            align={col.key === "currentSprintProgress" ? "left" : "center"}
                             activeFilterCount={selected.length}
                             onClearFilter={() =>
                               setNumFilters((prev) => ({ ...prev, [col.key]: [] }))
@@ -245,10 +246,12 @@ export function WorkloadPage() {
                   <Table.Tbody>
                     {sorted.map((r) => (
                     <Fragment key={r.userId}>
-                      <Table.Tr>
+                      <Table.Tr
+                        onClick={() => toggle(r.userId)}
+                        style={{ cursor: "pointer" }}
+                      >
                         <Table.Td>
                           <UnstyledButton
-                            onClick={() => toggle(r.userId)}
                             aria-expanded={expanded === r.userId}
                             fw={600}
                           >
@@ -256,12 +259,12 @@ export function WorkloadPage() {
                             {r.fullName}
                           </UnstyledButton>
                         </Table.Td>
-                        <Table.Td data-col="owner">
+                        <Table.Td data-col="owner" ta="center">
                           <Text size="md" fw={700} style={NUM_STYLE}>
                             {r.ownedProjectsCount ?? 0}
                           </Text>
                         </Table.Td>
-                        <Table.Td data-col="team-member">
+                        <Table.Td data-col="team-member" ta="center">
                           <Text size="md" fw={700} style={NUM_STYLE}>
                             {r.teamMemberProjectsCount ?? 0}
                           </Text>
@@ -288,22 +291,24 @@ export function WorkloadPage() {
                   ))}
                   {unassigned ? (
                     <Fragment key="unassigned">
-                      <Table.Tr>
+                      <Table.Tr
+                        onClick={() => toggle("unassigned")}
+                        style={{ cursor: "pointer" }}
+                      >
                         <Table.Td>
                           <UnstyledButton
-                            onClick={() => toggle("unassigned")}
                             aria-expanded={expanded === "unassigned"}
                             fw={600}
                           >
                             {expanded === "unassigned" ? "▾ " : "▸ "}Unassigned
                           </UnstyledButton>
                         </Table.Td>
-                        <Table.Td data-col="owner">
+                        <Table.Td data-col="owner" ta="center">
                           <Text size="md" fw={700} c="dimmed" style={NUM_STYLE}>
                             —
                           </Text>
                         </Table.Td>
-                        <Table.Td data-col="team-member">
+                        <Table.Td data-col="team-member" ta="center">
                           <Text size="md" fw={700} c="dimmed" style={NUM_STYLE}>
                             —
                           </Text>
