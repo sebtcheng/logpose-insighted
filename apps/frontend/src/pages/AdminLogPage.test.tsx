@@ -137,31 +137,66 @@ const button = (text: string, within: ParentNode = document) =>
   [...within.querySelectorAll("button")].find((b) => b.textContent === text);
 
 describe("Admin Log page", () => {
-  it("lists every task grouped by project with a PM Approval column", async () => {
+  it("renders a project selector dropdown with red pending badges and switches displayed tasks", async () => {
     const el = await mount(createElement(AdminLogPage));
-    const groups = [...el.querySelectorAll("[data-testid='admin-log-project']")];
-    expect(groups.map((g) => g.querySelector("h2")?.textContent)).toEqual([
-      "Infra Portal",
-      "Student App",
-    ]);
-    expect(groups[0]!.textContent).toContain("2 tasks");
-    expect(groups[0]!.querySelectorAll("[data-testid='admin-log-row']")).toHaveLength(2);
+    const trigger = el.querySelector<HTMLButtonElement>("[data-testid='admin-log-project-select']")!;
+    expect(trigger).toBeTruthy();
+    expect(trigger.textContent).toContain("Infra Portal");
+    expect(trigger.textContent).toContain("2 tasks");
+    expect(trigger.textContent).toContain("1 pending");
+    expect(trigger.querySelector("[data-testid='pending-approval-badge']")).toBeTruthy();
+
+    // Main panel renders the first project's tasks
+    const section = el.querySelector("[data-testid='admin-log-project']")!;
+    expect(section.getAttribute("aria-label")).toBe("Infra Portal");
+    expect(section.querySelectorAll("[data-testid='admin-log-row']")).toHaveLength(2);
     const heads = [...el.querySelectorAll("thead th")].map((th) => th.textContent);
     expect(heads.some((h) => h?.includes("PM Approval"))).toBe(true);
-    expect(groups[0]!.textContent).toMatch(/USM/);
-    expect(groups[0]!.textContent).toMatch(/RAID/);
-    expect(groups[0]!.textContent).toContain("Sprint 47 — Ends Sun, Nov 22, 2026");
-    // Single-open accordion: clicking Project B expands it and collapses Project A
-    const btn0 = groups[0]!.querySelector<HTMLButtonElement>("button[aria-expanded]")!;
-    const btn1 = groups[1]!.querySelector<HTMLButtonElement>("button[aria-expanded]")!;
-    expect(btn0.getAttribute("aria-expanded")).toBe("true");
-    expect(btn1.getAttribute("aria-expanded")).toBe("false");
-    await act(async () => {
-      btn1.click();
+    expect(section.textContent).toMatch(/USM/);
+    expect(section.textContent).toMatch(/RAID/);
+    expect(section.textContent).toContain("Sprint 47 — Ends Sun, Nov 22, 2026");
+
+    // Open dropdown and select Student App
+    act(() => {
+      trigger.click();
     });
-    expect(btn0.getAttribute("aria-expanded")).toBe("false");
-    expect(btn1.getAttribute("aria-expanded")).toBe("true");
-    expect(groups[1]!.textContent).toMatch(/OST/);
+    const options = [...document.querySelectorAll("[role='option']")];
+    expect(options).toHaveLength(2);
+    expect(options[0]!.querySelector("[data-testid='pending-approval-badge']")?.textContent).toBe("1 pending");
+    expect(options[1]!.querySelector("[data-testid='pending-approval-badge']")?.textContent).toBe("1 pending");
+    act(() => {
+      (options[1] as HTMLElement).click();
+    });
+    const updatedSection = el.querySelector("[data-testid='admin-log-project']")!;
+    expect(updatedSection.getAttribute("aria-label")).toBe("Student App");
+    expect(updatedSection.textContent).toMatch(/OST/);
+    expect(updatedSection.querySelectorAll("[data-testid='admin-log-row']")).toHaveLength(1);
+  });
+
+  it("hides the pending-approval badge when pending count is 0", async () => {
+    vi.mocked(api.get).mockImplementation((url: string) => {
+      if (url === "/admin-log") {
+        return Promise.resolve({
+          today: "2026-11-20",
+          projects: [
+            {
+              projectId: "p1",
+              projectName: "All Approved",
+              projectCode: "APP",
+              total: 1,
+              approved: 1,
+              pending: 0,
+              items: [item("raid-1", { sourceModule: "raid", pmApproval: "APPROVED", isCompleted: true })],
+            },
+          ],
+        });
+      }
+      return Promise.resolve({ items: [] });
+    });
+    const el = await mount(createElement(AdminLogPage));
+    const trigger = el.querySelector<HTMLButtonElement>("[data-testid='admin-log-project-select']")!;
+    expect(trigger.textContent).toContain("All Approved");
+    expect(trigger.querySelector("[data-testid='pending-approval-badge']")).toBeNull();
   });
 
   it("locks the completion checkbox until the task is approved", async () => {

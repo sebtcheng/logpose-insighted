@@ -279,28 +279,25 @@ function KanoCards({
           <Group justify="space-between" align="flex-start" wrap="nowrap" mb="xs">
             <div>
               <Text size="sm" fw={600}>
-                {r.code}
+                {r.revisionRequest}
               </Text>
-              <Text size="xs" c="dimmed">
-                {r.projectName}
-              </Text>
-              {r.responsibleName ? (
-                <Text size="xs" c="dimmed">
-                  {r.responsibleName}
-                </Text>
-              ) : null}
+              <Group gap="xs" mt={4} align="center">
+                <Badge size="xs" variant="light" color="gray">
+                  {r.projectName}
+                </Badge>
+                {r.responsibleName ? (
+                  <Text size="xs" fw={600} c="blue">
+                    {r.responsibleName}
+                  </Text>
+                ) : null}
+              </Group>
             </div>
             {r.kanoCategory ? (
               <Badge color={CATEGORY_COLOR[r.kanoCategory]} variant="light">
                 {KANO_LABELS[r.kanoCategory]}
               </Badge>
-            ) : (
-              <Text size="sm" c="dimmed">
-                Not evaluated
-              </Text>
-            )}
+            ) : null}
           </Group>
-          <Text size="sm">{r.revisionRequest}</Text>
           <KanoSpecChecklist request={r} editable={canEdit} />
           {canEdit ? (
             <Group mt="sm" justify="flex-end">
@@ -312,7 +309,7 @@ function KanoCards({
                   onEdit(r);
                 }}
               >
-                Evaluate
+                View
               </Button>
             </Group>
           ) : null}

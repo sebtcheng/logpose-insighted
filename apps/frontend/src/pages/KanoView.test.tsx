@@ -116,4 +116,37 @@ describe("Kano Request Tracker view mode", () => {
     await mount("/kano?view=table");
     expect(checkedMode()).toBe("table");
   });
+
+  it("renders card with title, project badge, owner, no REQ code, no Not evaluated, and View button", async () => {
+    vi.mocked(api.get).mockImplementation((url: string) => {
+      if (url === "/projects") return Promise.resolve({ items: [{ id: "p1", name: "Infra" }] });
+      if (url.includes("kano"))
+        return Promise.resolve({
+          items: [{ ...REQUEST, responsibleId: "u1", responsibleName: "Justine" }],
+        });
+      return Promise.resolve({ items: [] });
+    });
+    await mount("/kano?project=p1");
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 100));
+    });
+    const card = document.querySelector(".item-card")!;
+    expect(card).not.toBeNull();
+    expect(card.textContent).not.toContain("REQ-001");
+    expect(card.textContent).not.toContain("Not evaluated");
+    expect(card.textContent).toContain("Add categories");
+    expect(card.textContent).toContain("Infra");
+    expect(card.textContent).toContain("Justine");
+    const badge = card.querySelector(".mantine-Badge-root");
+    expect(badge?.textContent).toBe("Infra");
+    const viewBtn = Array.from(card.querySelectorAll("button")).find(
+      (b) => b.textContent?.trim() === "View",
+    );
+    expect(viewBtn).toBeDefined();
+    await act(async () => {
+      viewBtn!.click();
+      await Promise.resolve();
+    });
+    expect(document.querySelector('[role="dialog"]')).not.toBeNull();
+  });
 });
