@@ -338,6 +338,14 @@ export type CreateActivityInput = z.infer<typeof createActivitySchema>;
 export type UpdateActivityInput = z.infer<typeof updateActivitySchema>;
 
 // ---- Phase 3: workload, search read models
+export type WorkloadSprintMetrics = {
+  currentSprintCompleted: number;
+  currentSprintTotal: number;
+  sprintBacklog: number;
+  upcomingSprintsTotal: number;
+  completedTasksTotal: number;
+};
+
 export type WorkloadRow = {
   userId: string;
   fullName: string;
@@ -346,11 +354,14 @@ export type WorkloadRow = {
   /** Distinct projects this person is listed on as a team member. */
   teamMemberProjectsCount: number;
   dueThisWeek: number;
-};
+} & WorkloadSprintMetrics;
+
 export type WorkloadResponse = {
   items: WorkloadRow[];
   /** Team-wide rollups across all five modules, including an Unassigned bucket. */
   members: WorkMemberRollup[];
+  /** Sprint-scoped metrics for unassigned items. */
+  unassigned?: WorkloadSprintMetrics;
   /** Names of every project that appears in the rollups, including ones the viewer is not a member of. */
   projectNames?: Record<string, string>;
 };

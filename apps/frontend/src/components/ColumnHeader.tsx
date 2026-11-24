@@ -30,6 +30,7 @@ export function ColumnHeader<TKey extends string>({
   onSort,
   activeFilterCount = 0,
   onClearFilter,
+  align = "left",
   children,
 }: {
   label: string;
@@ -38,6 +39,7 @@ export function ColumnHeader<TKey extends string>({
   onSort: (key: TKey) => void;
   activeFilterCount?: number;
   onClearFilter?: () => void;
+  align?: "left" | "center";
   children?: ReactNode;
 }) {
   const [opened, setOpened] = useState(false);
@@ -47,7 +49,7 @@ export function ColumnHeader<TKey extends string>({
 
   return (
     <Table.Th aria-sort={ariaSort}>
-      <Group gap={4} wrap="nowrap" justify="space-between">
+      <Group gap={4} wrap="nowrap" justify={align === "center" ? "center" : "space-between"}>
         <UnstyledButton
           type="button"
           onClick={() => onSort(colKey)}
