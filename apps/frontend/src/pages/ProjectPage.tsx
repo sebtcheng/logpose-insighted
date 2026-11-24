@@ -1,3 +1,5 @@
+import { useState } from "react";
+import { PaginationBar, paginateItems } from "../components/PaginationBar";
 import {
   Alert,
   Anchor,
@@ -50,21 +52,22 @@ export function ProjectPage() {
           </Alert>
         ) : (
           <>
+            <PageHeader
+              variant="projects"
+              title={project.name}
+              subtitle={`${project.code}${project.archivedAt ? " · Archived (read-only)" : ""}`}
+            />
             <Button
               component={Link}
               to="/projects"
               variant="subtle"
               size="compact-sm"
               leftSection="←"
-              mb="xs"
+              mb="sm"
               ml={-8}
             >
               Back to Projects
             </Button>
-            <PageHeader
-              title={project.name}
-              subtitle={`${project.code}${project.archivedAt ? " · Archived (read-only)" : ""}`}
-            />
             <ProjectWork projectId={project.id} readOnly={!!project.archivedAt} canCreate={isPm} />
           </>
         )
@@ -88,6 +91,7 @@ function ProjectWork({
   readOnly: boolean;
 }) {
   const [params, setParams] = useSearchParams();
+  const [page, setPage] = useState(1);
   const moduleFilter = workSourceModuleSchema.safeParse(params.get("module")).data;
   const status = workStatusFilterSchema.safeParse(params.get("status")).data;
   const assigneeId = params.get("assignee") ?? undefined;
@@ -168,21 +172,31 @@ function ProjectWork({
         isEmpty={(d) => d.items.length === 0}
         empty={hasFilters ? "No activities match these filters." : "No activities yet."}
       >
-        {(data) => (
-          <Card withBorder padding={0}>
-            <WorkItemsView
-              items={data.items}
-              view={view}
-              projectNames={projectNames}
-              detailed
-              checkable
-              deletable
-              onOpen={(item) =>
-                item.sourceModule === "project" ? () => openActivity(item.id) : undefined
-              }
-            />
-          </Card>
-        )}
+        {(data) => {
+          const paged = paginateItems(data.items, page);
+          return (
+            <Card withBorder padding={0}>
+              <div style={{ maxHeight: 480, overflowY: "auto" }}>
+                <WorkItemsView
+                  items={paged.items}
+                  view={view}
+                  projectNames={projectNames}
+                  detailed
+                  checkable
+                  deletable
+                  onOpen={(item) =>
+                    item.sourceModule === "project" ? () => openActivity(item.id) : undefined
+                  }
+                />
+              </div>
+              {paged.total > 20 ? (
+                <div style={{ padding: "0 12px 10px" }}>
+                  <PaginationBar page={paged.page} total={paged.total} onPageChange={setPage} />
+                </div>
+              ) : null}
+            </Card>
+          );
+        }}
       </QueryState>
       {canCreate ? (
         <NewActivityModal projectId={projectId} opened={opened} onClose={close} />

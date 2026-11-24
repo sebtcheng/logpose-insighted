@@ -360,6 +360,7 @@ export function OstPage() {
   return (
     <>
       <PageHeader
+        variant="ost"
         title="Opportunity Solution Tree (OST)"
         subtitle="Start from an outcome, map the requirements, and compare the solutions you could take as actions."
         actions={

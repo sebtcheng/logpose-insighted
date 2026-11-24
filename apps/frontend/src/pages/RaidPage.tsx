@@ -375,7 +375,7 @@ export function RaidCards({
             </div>
             <MitigationSummary item={i} onOpen={onEdit} />
           </Group>
-          <div className="raid-card-mitigations">
+          <div className="raid-card-mitigations" style={{ maxHeight: 220, overflowY: "auto" }}>
             {i.mitigatingActions.length === 0 ? (
               <Text size="xs" className="raid-sub">
                 No mitigating actions
@@ -457,6 +457,7 @@ export function RaidPage() {
   return (
     <div className="raid-page">
       <PageHeader
+        variant="raid"
         title="RAID Log"
         subtitle="Risks, assumptions, issues and dependencies. Anyone can submit; the PM assigns owners and resolves."
         actions={
@@ -520,7 +521,8 @@ export function RaidPage() {
             <RaidCards items={items} canEdit={!readOnly} canDelete={!readOnly} onEdit={openEdit} />
           ) : (
             <div className="raid-card">
-              <Table.ScrollContainer minWidth={960}>
+              <div style={{ maxHeight: 520, overflowY: "auto" }}>
+                <Table.ScrollContainer minWidth={960}>
                 <Table verticalSpacing="xs" highlightOnHover className="raid-table">
                   <Table.Thead>
                     <Table.Tr>
@@ -579,6 +581,7 @@ export function RaidPage() {
                   </Table.Tbody>
                 </Table>
               </Table.ScrollContainer>
+              </div>
             </div>
           )
         }

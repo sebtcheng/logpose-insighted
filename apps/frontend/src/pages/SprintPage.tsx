@@ -63,6 +63,7 @@ function SprintView({ sprint, projectId }: { sprint: SprintDto; projectId: strin
   return (
     <>
       <PageHeader
+        variant="history"
         title={sprint.name}
         subtitle={
           <>

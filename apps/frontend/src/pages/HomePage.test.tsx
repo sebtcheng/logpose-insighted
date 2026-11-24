@@ -4,7 +4,7 @@ import { createRoot } from "react-dom/client";
 import { MantineProvider } from "@mantine/core";
 import { describe, expect, it } from "vitest";
 import type { HomeResponse } from "@myapp/shared";
-import { Header } from "./HomePage";
+import { Header, getSprintProgressColor } from "./HomePage";
 
 (globalThis as unknown as { IS_REACT_ACT_ENVIRONMENT: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 if (!window.matchMedia) {
@@ -68,7 +68,7 @@ function makeHome(overrides?: Partial<HomeResponse>): HomeResponse {
 }
 
 describe("HomePage Header (Sprint Telemetry Card)", () => {
-  it("renders the two-zone telemetry panels with days-left badge, backlog strip, donut chart and breakdown rows", () => {
+  it("renders the two-zone telemetry panels with inline days-left, square percentage badge, combined progress bar, and no backlog banner", () => {
     const container = document.createElement("div");
     document.body.appendChild(container);
     const root = createRoot(container);
@@ -85,17 +85,83 @@ describe("HomePage Header (Sprint Telemetry Card)", () => {
     expect(container.querySelector('[data-testid="sprint-donut"]')).not.toBeNull();
     expect(container.querySelector('[data-testid="wip-rail"]')).toBeNull();
     expect(container.querySelector('[data-testid="sprint-days-left"]')?.textContent).toContain("6");
-    expect(container.querySelector('[data-testid="sprint-backlog"]')?.textContent).toContain(
-      "Sprint Backlogs",
+    expect(container.querySelector('[data-testid="sprint-backlog"]')).toBeNull();
+    expect(container.querySelector('[data-testid="sprint-progress-summary"]')?.textContent).toBe(
+      "4 of 44 tasks completed",
     );
-    expect(container.querySelector('[data-testid="sprint-backlog"]')?.textContent).toContain(
-      "3 tasks",
+    expect(
+      container.querySelector('[data-testid="sprint-progress-backlog-label"]')?.textContent,
+    ).toBe("3 backlogs");
+    expect(container.querySelector('[data-testid="sprint-progress-pct"]')?.textContent).toBe(
+      "9.1%",
     );
+    const pctBadge = container.querySelector('[data-testid="sprint-progress-pct"]') as HTMLElement;
+    expect(pctBadge.style.color).not.toBe("");
+    expect(container.querySelector('[data-testid="sprint-progress-backlog-bar"]')).not.toBeNull();
     expect(container.querySelector('[data-testid="kpi-tile-ongoing"]')).not.toBeNull();
     expect(container.querySelector('[data-testid="kpi-tile-completed"]')).not.toBeNull();
     expect(container.querySelector('[data-testid="kpi-tile-on-time"]')).not.toBeNull();
     expect(container.querySelector('[data-testid="kpi-tile-delayed"]')).not.toBeNull();
-    expect(container.querySelector('[data-testid="sprint-progress-pct"]')?.textContent).toBe("10%");
+
+    act(() => root.unmount());
+    container.remove();
+  });
+
+  it("omits the red backlog segment when carryOver count is 0 and guards against division by zero", () => {
+    const container = document.createElement("div");
+    document.body.appendChild(container);
+    const root = createRoot(container);
+
+    act(() => {
+      root.render(
+        <MantineProvider>
+          <Header data={makeHome({ carryOver: { count: 0 } })} />
+        </MantineProvider>,
+      );
+    });
+    expect(container.querySelector('[data-testid="sprint-progress-backlog-bar"]')).toBeNull();
+    expect(container.querySelector('[data-testid="sprint-progress-backlog-label"]')).toBeNull();
+    expect(container.querySelector('[data-testid="sprint-progress-summary"]')?.textContent).toBe(
+      "4 of 41 tasks completed",
+    );
+
+    act(() => {
+      root.render(
+        <MantineProvider>
+          <Header data={makeHome({ carryOver: { count: 1 } })} />
+        </MantineProvider>,
+      );
+    });
+    expect(
+      container.querySelector('[data-testid="sprint-progress-backlog-label"]')?.textContent,
+    ).toBe("1 backlog");
+
+    act(() => {
+      root.render(
+        <MantineProvider>
+          <Header
+            data={makeHome({
+              carryOver: { count: 0 },
+              sprintSummary: {
+                total: 0,
+                completed: 0,
+                incomplete: 0,
+                completionRate: 0,
+                ongoing: 0,
+                onTime: 0,
+                delayed: 0,
+                unscheduled: 0,
+              },
+            })}
+          />
+        </MantineProvider>,
+      );
+    });
+    expect(container.querySelector('[data-testid="sprint-progress-pct"]')?.textContent).toBe("0%");
+    expect(container.querySelector('[data-testid="sprint-progress-summary"]')?.textContent).toBe(
+      "0 of 0 tasks completed",
+    );
+    expect(container.querySelector('[data-testid="sprint-progress-backlog-bar"]')).toBeNull();
 
     act(() => root.unmount());
     container.remove();
@@ -114,7 +180,7 @@ describe("HomePage Header (Sprint Telemetry Card)", () => {
       );
     });
     const zeroTile = container.querySelector('[data-testid="kpi-tile-delayed"]') as HTMLElement;
-    expect(zeroTile.style.backgroundColor).toBe("rgb(251, 230, 233)");
+    expect(zeroTile.style.backgroundColor).toBe("rgba(255, 158, 163, 0.08)");
 
     act(() => {
       root.render(
@@ -137,9 +203,18 @@ describe("HomePage Header (Sprint Telemetry Card)", () => {
       );
     });
     const delayedTile = container.querySelector('[data-testid="kpi-tile-delayed"]') as HTMLElement;
-    expect(delayedTile.style.backgroundColor).toBe("rgb(251, 230, 233)");
+    expect(delayedTile.style.backgroundColor).toBe("rgba(255, 158, 163, 0.08)");
 
     act(() => root.unmount());
     container.remove();
+  });
+
+  it("maps completion percentage continuously from red (0%) to green (100%) with clamping", () => {
+    expect(getSprintProgressColor(0).hue).toBe(0);
+    expect(getSprintProgressColor(50).hue).toBe(60);
+    expect(getSprintProgressColor(100).hue).toBe(120);
+    expect(getSprintProgressColor(-15).hue).toBe(0);
+    expect(getSprintProgressColor(150).hue).toBe(120);
+    expect(getSprintProgressColor(Number.NaN).hue).toBe(0);
   });
 });
